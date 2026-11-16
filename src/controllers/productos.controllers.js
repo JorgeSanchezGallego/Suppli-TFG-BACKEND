@@ -1,4 +1,4 @@
-const Producto = require('../models/productos.models');
+const Producto = require('../models/producto.model');
 const {borrarImagenCloudinary} = require('../utils/cloudinary.utils');
 
 const verProductos = async (req, res) => {

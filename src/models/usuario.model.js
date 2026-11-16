@@ -62,6 +62,7 @@ usuarioSchema.pre('save', async function (){
         this.contraseña = await bcrypt.hash(this.contraseña, 10);
     } catch (error) {
         console.error('Error al encriptar la contraseña:', error);
+        throw new Error('Error al encriptar la contraseña');
     }
 });
 

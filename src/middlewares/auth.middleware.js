@@ -21,7 +21,7 @@ const isAuth = async (req, res, next) => {
 
     const esEncargado = (req, res, next) => {
         try {
-            if (req.user &&req.user.role !== 'encargado') {
+            if (req.user &&req.user.role === 'encargado') {
                 return next();
             } else {
                 return res.status(403).json("Acceso denegado. Solo los encargados pueden acceder a esta ruta.");
@@ -32,7 +32,7 @@ const isAuth = async (req, res, next) => {
 
     const esProveedor = (req, res, next) => {
         try {
-            if (req.user && req.user.role !== 'proveedor') {
+            if (req.user && req.user.role === 'proveedor') {
                 return next();
             } else {
                 return res.status(403).json("Acceso denegado. Solo los proveedores pueden acceder a esta ruta.");
@@ -43,7 +43,7 @@ const isAuth = async (req, res, next) => {
 
     const esEmpleado = (req, res, next) => {
         try {
-            if (req.user && req.user.role !== 'empleado') {
+            if (req.user && req.user.role === 'empleado') {
                 return next();
             } else {
                 return res.status(403).json("Acceso denegado. Solo los empleados pueden acceder a esta ruta.");

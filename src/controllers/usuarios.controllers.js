@@ -1,12 +1,12 @@
 const Usuario = require('../models/usuario.model');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt');
 const {generarToken} = require('../utils/token');
 const {borrarImagenCloudinary} = require('../utils/cloudinary.utils');
 
 const registrarUsuario = async (req, res) => {
     try {
         const user = new Usuario(req.body);
-        const userExistente = await Usuario.findOne({email: user.email});
+        const userExistente = await Usuario.findOne({correo: user.correo});
         if (userExistente) {
             if (req.file) {
                 await borrarImagenCloudinary(req.file.path);

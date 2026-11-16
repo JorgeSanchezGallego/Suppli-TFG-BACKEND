@@ -1,22 +1,32 @@
-const Pedido = require('../models/pedidos.models');
-const Producto = require('../models/productos.models');
+const Pedido = require('../models/pedido.model');
+const Producto = require('../models/producto.model');
 
 const crearPedido = async (req, res) => {
     try {
-        const {productos} = req.body;
-        if (!productos && productos.length === 0) {
+        const {productos, proveedor} = req.body;
+        if (!productos || productos.length === 0) {
             return res.status(400).json({error: "No se proporcionaron productos para el pedido"});
         }
+        let proveedorID = proveedor;
         const productosConPrecio = await Promise.all(productos.map(async (item) => {
             const productoDB = await Producto.findById(item.producto);
             if (!productoDB) {
                 throw new Error(`Producto con ID ${item.producto} no encontrado`);
             }
-            return { producto: item.producto, cantidad: item.cantidad, precio: productoDB.precio };
+            return { producto: item.producto, nombre: productoDB.nombre, cantidad: item.cantidad, precioUnitario: productoDB.precio };
         }));
+        if (!proveedorID) {
+            return res.status(400).json({ error: "El campo proveedor es obligatorio para crear el pedido" });
+        }
+
+        const totalCalculado = productosConPrecio.reduce((acc, item) => acc + (item.precioUnitario * item.cantidad), 0);
+        const totalRedondeado = Math.round(totalCalculado * 100) / 100;
         const nuevoPedido = new Pedido({
             usuario: req.user._id,
+            proveedor: proveedorID,
+            bar: req.user.bar,
             productos: productosConPrecio,
+            total: totalRedondeado
         });
         const pedidoGuardado = await nuevoPedido.save();
         await pedidoGuardado.populate('productos.producto');
@@ -28,7 +38,7 @@ const crearPedido = async (req, res) => {
 
 const verPedidos = async (req, res) => {
     try {
-        const pedidos = await Pedido.find({usuario: req.user._id}).populate('productos.producto').sort({creadoEn: -1});
+        const pedidos = await Pedido.find({usuario: req.user._id}).populate('productos.producto').sort({createdAt: -1});
         return res.status(200).json(pedidos);
     } catch (error) {
         return res.status(500).json({error: "error al obtener pedidos", details: error.message});
