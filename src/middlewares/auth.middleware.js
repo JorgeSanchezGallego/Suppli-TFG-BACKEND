@@ -52,7 +52,7 @@ const isAuth = async (req, res, next) => {
             return res.status(403).json("Error de permisos. Acceso denegado.");
         }}
 
-    // Permite el acceso si el usuario tiene CUALQUIERA de los roles indicados
+    
     const permitirRoles = (...roles) => (req, res, next) => {
         if (req.user && roles.includes(req.user.role)) {
             return next();

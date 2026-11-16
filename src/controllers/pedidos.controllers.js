@@ -55,7 +55,27 @@ const crearPedido = async (req, res) => {
 
 const verPedidos = async (req, res) => {
     try {
-        const pedidos = await Pedido.find({usuario: req.user._id}).populate('productos.producto').sort({createdAt: -1});
+        // El encargado ve los pedidos de su bar; el proveedor, los que le han hecho a su empresa
+        let filtro;
+        if (req.user.role === 'encargado') {
+            if (!req.user.bar) {
+                return res.status(400).json({error: "El encargado no tiene un bar asignado"});
+            }
+            filtro = {bar: req.user.bar};
+        } else if (req.user.role === 'proveedor') {
+            if (!req.user.proveedor) {
+                return res.status(400).json({error: "El usuario no está vinculado a ningún proveedor"});
+            }
+            filtro = {proveedor: req.user.proveedor};
+        } else {
+            return res.status(403).json({error: "Acceso denegado"});
+        }
+
+        const pedidos = await Pedido.find(filtro)
+            .populate('productos.producto')
+            .populate('usuario', 'nombre apellidos')
+            .populate('bar', 'nombre ubicacion')
+            .sort({createdAt: -1});
         return res.status(200).json(pedidos);
     } catch (error) {
         return res.status(500).json({error: "error al obtener pedidos", details: error.message});

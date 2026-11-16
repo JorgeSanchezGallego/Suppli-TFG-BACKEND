@@ -128,7 +128,7 @@ Conexión a Cloudinary exitosa
 Conectado con éxito a la BBDD 🟢
 ```
 
-> **Nota:** para registrar un usuario hace falta indicar el `_id` de un **Bar** existente. Por ahora la API no tiene endpoint para crear bares ni proveedores, así que esos documentos deben insertarse primero a mano en la base de datos (con MongoDB Compass, Atlas o `mongosh`).
+> **Nota:** para registrar un usuario hace falta indicar el `_id` de un **Bar** existente; si el usuario tiene rol `proveedor`, en su lugar se indica el `_id` de su **Proveedor**. Por ahora la API no tiene endpoint para crear bares ni proveedores, así que esos documentos deben insertarse primero a mano en la base de datos (con MongoDB Compass, Atlas o `mongosh`).
 
 ---
 
@@ -136,7 +136,7 @@ Conectado con éxito a la BBDD 🟢
 
 | Modelo | Campos principales |
 |---|---|
-| **Usuario** | `nombre`, `apellidos`, `bar` (ref. Bar), `fechaNacimiento`, `residencia`, `correo` (único), `contraseña` (hash bcrypt, mín. 8 caracteres), `telefono`, `role` (`encargado` · `empleado` · `proveedor`) |
+| **Usuario** | `nombre`, `apellidos`, `bar` (ref. Bar; obligatorio salvo para proveedores), `proveedor` (ref. Proveedor; obligatorio solo para el rol `proveedor`), `fechaNacimiento`, `residencia`, `correo` (único), `contraseña` (hash bcrypt, mín. 8 caracteres), `telefono`, `role` (`encargado` · `empleado` · `proveedor`) |
 | **Bar** | `nombre`, `ubicacion` |
 | **Proveedor** | `nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto` |
 | **Producto** | `proveedor` (ref. Proveedor), `nombre`, `precio`, `medida`, `stock_optimo_invierno`, `stock_optimo_verano`, `categoria` |
@@ -188,7 +188,7 @@ URL base: `http://localhost:3000/api`
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
 | POST | `/` | Empleado | Crea un pedido para el bar del usuario |
-| GET | `/historial` | Encargado / Proveedor | Historial de pedidos |
+| GET | `/historial` | Encargado / Proveedor | Historial de pedidos: el encargado ve los de su bar y el proveedor los que ha recibido su empresa |
 
 Ejemplo de cuerpo para crear un pedido:
 
