@@ -12,13 +12,10 @@ const usuarioSchema = new mongoose.Schema({
         required: true,
         trim: true
     },
-    bar : {
+    bares: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Bar',
-        required: function () {
-            return this.role !== 'proveedor';
-        }
-    },
+        ref: 'Bar'
+    }],
     fechaNacimiento: {
         type: Date,
         required: true
@@ -50,7 +47,6 @@ const usuarioSchema = new mongoose.Schema({
         enum: ['encargado', 'empleado', 'proveedor'],
         default: 'empleado'
     },
-    // Empresa proveedora a la que pertenece el usuario (solo para el rol "proveedor")
     proveedor: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Proveedor',

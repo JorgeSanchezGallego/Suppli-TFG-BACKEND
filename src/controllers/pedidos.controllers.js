@@ -1,10 +1,12 @@
 const mongoose = require('mongoose');
 const Pedido = require('../models/pedido.model');
 const Producto = require('../models/producto.model');
+const Bar = require('../models/bar.model');
+const Proveedor = require('../models/proveedor.model');
 
 const crearPedido = async (req, res) => {
     try {
-        const {productos, proveedor} = req.body;
+        const {productos, proveedor, bar} = req.body;
 
         if (!productos || !Array.isArray(productos) || productos.length === 0) {
             return res.status(400).json({error: "No se proporcionaron productos para el pedido"});
@@ -14,10 +16,18 @@ const crearPedido = async (req, res) => {
             return res.status(400).json({error: "El campo proveedor es obligatorio y debe ser un ID válido"});
         }
 
-        if (!req.user || !req.user.bar) {
-            return res.status(400).json({error: "El usuario no tiene un bar asignado"});
+        if (!bar || !mongoose.Types.ObjectId.isValid(bar)) {
+            return res.status(400).json({error: "El campo bar es obligatorio y debe ser un ID válido"});
         }
-        
+
+        if (!req.user.bares.some((barId) => barId.equals(bar))) {
+            return res.status(403).json({error: "No perteneces a ese bar"});
+        }
+
+        if (!(await Proveedor.exists({_id: proveedor}))) {
+            return res.status(404).json({error: "Proveedor no encontrado"});
+        }
+
         let proveedorID = proveedor;
         const productosConPrecio = await Promise.all(productos.map(async (item) => {
             if (!item.producto || !mongoose.Types.ObjectId.isValid(item.producto)) {
@@ -30,6 +40,9 @@ const crearPedido = async (req, res) => {
             if (!productoDB) {
                 throw new Error(`Producto con ID ${item.producto} no encontrado`);
             }
+            if (!productoDB.proveedor || !productoDB.proveedor.equals(proveedor)) {
+                throw new Error(`El producto "${productoDB.nombre}" no pertenece al proveedor del pedido`);
+            }
             return { producto: item.producto, nombre: productoDB.nombre, cantidad: item.cantidad, precioUnitario: productoDB.precio };
         }));
         if (!proveedorID) {
@@ -41,7 +54,7 @@ const crearPedido = async (req, res) => {
         const nuevoPedido = new Pedido({
             usuario: req.user._id,
             proveedor: proveedorID,
-            bar: req.user.bar,
+            bar,
             productos: productosConPrecio,
             total: totalRedondeado
         });
@@ -55,13 +68,19 @@ const crearPedido = async (req, res) => {
 
 const verPedidos = async (req, res) => {
     try {
-        // El encargado ve los pedidos de su bar; el proveedor, los que le han hecho a su empresa
         let filtro;
         if (req.user.role === 'encargado') {
-            if (!req.user.bar) {
-                return res.status(400).json({error: "El encargado no tiene un bar asignado"});
+            const misBares = await Bar.find({encargado: req.user._id}).select('_id');
+            const idsBares = misBares.map((b) => b._id);
+            const {bar} = req.query;
+            if (bar) {
+                if (!mongoose.Types.ObjectId.isValid(bar) || !idsBares.some((id) => id.equals(bar))) {
+                    return res.status(403).json({error: "No eres el encargado de ese bar"});
+                }
+                filtro = {bar};
+            } else {
+                filtro = {bar: {$in: idsBares}};
             }
-            filtro = {bar: req.user.bar};
         } else if (req.user.role === 'proveedor') {
             if (!req.user.proveedor) {
                 return res.status(400).json({error: "El usuario no está vinculado a ningún proveedor"});

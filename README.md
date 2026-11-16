@@ -31,7 +31,7 @@ backend-api/
 ├── Diagramas/            # Diagramas de clases, casos de uso, estados, secuencia y Gantt
 ├── src/
 │   ├── config/           # Conexión a MongoDB (db.js) y Cloudinary (cloudinary.js)
-│   ├── controllers/      # Lógica de cada recurso (usuarios, productos, pedidos, bares)
+│   ├── controllers/      # Lógica de cada recurso (usuarios, productos, pedidos, bares, proveedores)
 │   ├── middlewares/      # Autenticación JWT, control de roles y subida de archivos
 │   ├── models/           # Esquemas de Mongoose (Usuario, Bar, Proveedor, Producto, Pedido)
 │   ├── routes/           # Definición de los endpoints
@@ -128,7 +128,30 @@ Conexión a Cloudinary exitosa
 Conectado con éxito a la BBDD 🟢
 ```
 
-> **Nota:** para registrar un usuario hace falta indicar el `_id` de un **Bar** existente; si el usuario tiene rol `proveedor`, en su lugar se indica el `_id` de su **Proveedor**. Por ahora la API no tiene endpoint para crear bares ni proveedores, así que esos documentos deben insertarse primero a mano en la base de datos (con MongoDB Compass, Atlas o `mongosh`).
+### Datos de prueba (seed)
+
+Para tener datos con los que probar la API (por ejemplo con Insomnia o Postman):
+
+```bash
+npm run seed
+```
+
+> ⚠️ El seed **vacía** las colecciones de usuarios, bares, proveedores, productos y pedidos de la base de datos indicada en `DB_URL` antes de insertar los datos de prueba. No lo ejecutes contra una base de datos con datos reales.
+
+Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`](src/seeds/seed.js). Se crean 3 proveedores, 3 bares, 10 productos, 4 pedidos y estos usuarios, todos con la contraseña `Prueba1234`:
+
+| Correo | Rol | Detalle |
+|---|---|---|
+| `encargado1@suppli.test` | Encargado | Encargado de *Kiosko Gómiz* y *Noray* |
+| `encargado2@suppli.test` | Encargado | Encargado de *Soho Parc* |
+| `empleado1@suppli.test` | Empleado | Trabaja en *Kiosko Gómiz* y *Noray* |
+| `empleado2@suppli.test` | Empleado | Trabaja en *Kiosko Gómiz* |
+| `empleado3@suppli.test` | Empleado | Trabaja en *Soho Parc* |
+| `empleado4@suppli.test` | Empleado | Sin bar asignado |
+| `proveedor1@suppli.test` | Proveedor | Empresa *Bebidas del Sur* |
+| `proveedor2@suppli.test` | Proveedor | Empresa *Cervezas La Cañada* |
+
+> **Nota:** todo el mundo se registra con rol `empleado` y sin bar (si el cuerpo trae `role`, `proveedor` o `bares`, se ignoran). El **primer encargado** hay que crearlo a mano: se registra como cualquier usuario y después se le cambia el `role` a `encargado` en la base de datos (con MongoDB Compass, Atlas o `mongosh`). A partir de ahí, un encargado puede crear bares, asignarles empleados y crear proveedores y convertir a otros usuarios en encargados o proveedores.
 
 ---
 
@@ -136,10 +159,10 @@ Conectado con éxito a la BBDD 🟢
 
 | Modelo | Campos principales |
 |---|---|
-| **Usuario** | `nombre`, `apellidos`, `bar` (ref. Bar; obligatorio salvo para proveedores), `proveedor` (ref. Proveedor; obligatorio solo para el rol `proveedor`), `fechaNacimiento`, `residencia`, `correo` (único), `contraseña` (hash bcrypt, mín. 8 caracteres), `telefono`, `role` (`encargado` · `empleado` · `proveedor`) |
-| **Bar** | `nombre`, `ubicacion` |
+| **Usuario** | `nombre`, `apellidos`, `bares` (lista de ref. Bar; bares en los que trabaja un empleado, los asigna el encargado), `proveedor` (ref. Proveedor; obligatorio solo para el rol `proveedor`), `fechaNacimiento`, `residencia`, `correo` (único), `contraseña` (hash bcrypt, mín. 8 caracteres), `telefono`, `role` (`encargado` · `empleado` · `proveedor`) |
+| **Bar** | `nombre`, `ubicacion` (no se puede modificar), `encargado` (ref. Usuario; único encargado del bar, que es quien lo crea) |
 | **Proveedor** | `nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto` |
-| **Producto** | `proveedor` (ref. Proveedor), `nombre`, `precio`, `medida`, `stock_optimo_invierno`, `stock_optimo_verano`, `categoria` |
+| **Producto** | `proveedor` (ref. Proveedor), `nombre`, `precio`, `medida`, `stock_optimo_invierno`, `stock_optimo_verano`, `categoria`, `imagen` (URL de Cloudinary) |
 | **Pedido** | `proveedor`, `bar`, `usuario`, `fecha_pedido`, `estado` (`pendiente` · `enviado` · `entregado`), `productos[]`, `total` |
 
 **Pedidos inmutables:** al crear un pedido, el servidor copia el **nombre** y el **precio unitario** de cada producto en ese momento y calcula el total él mismo. Si después cambia el precio en el catálogo, el historial sigue mostrando el precio original.
@@ -168,33 +191,44 @@ URL base: `http://localhost:3000/api`
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/registro` | Público | Registra un nuevo usuario |
+| POST | `/registro` | Público | Registra un nuevo usuario (siempre con rol `empleado`) |
 | POST | `/login` | Público | Inicia sesión y devuelve `{ user, token }` |
+| GET | `/?nombre=<texto>&role=<rol>` | Encargado | Lista todos los usuarios con sus bares; filtros opcionales: `nombre` (nombre o apellidos) y `role` |
+| PATCH | `/:id/rol` | Encargado | Cambia el rol de un usuario (`{ "role": "encargado" }`; para `proveedor` hay que añadir `"proveedor": "<id_proveedor>"`) |
+
+Reglas al cambiar el rol:
+- Un encargado no puede cambiar su propio rol.
+- Un encargado que todavía tiene bares no puede dejar de ser encargado (habría que borrar antes sus bares).
+- Al pasar a `encargado` o `proveedor`, el usuario deja de pertenecer a los bares en los que trabajaba como empleado.
+- Al dejar de ser `proveedor`, se desvincula de su empresa proveedora.
 
 ### Productos — `/api/productos`
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| GET | `/` | Empleado / Encargado | Lista todos los productos |
-| GET | `/buscar/nombre/:nombre` | Empleado / Encargado | Busca productos por nombre |
-| GET | `/buscar/categoria/:categoria` | Empleado / Encargado | Busca productos por categoría |
-| GET | `/buscar/proveedor/:proveedor` | Empleado / Encargado | Busca productos por proveedor |
-| POST | `/` | Proveedor / Encargado | Crea un producto (`multipart/form-data`, campo de imagen `imagen`) |
-| PATCH | `/:id` | Proveedor / Encargado | Actualiza un producto (admite nueva `imagen`) |
-| DELETE | `/:id` | Proveedor / Encargado | Elimina un producto |
+| GET | `/` | Empleado / Encargado / Proveedor | Lista los productos (con el nombre de su proveedor) |
+| GET | `/buscar/nombre/:nombre` | Empleado / Encargado / Proveedor | Busca productos por nombre |
+| GET | `/buscar/categoria/:categoria` | Empleado / Encargado / Proveedor | Busca productos por categoría |
+| GET | `/buscar/proveedor/:nombre` | Empleado / Encargado / Proveedor | Busca productos por el nombre de la empresa proveedora |
+| POST | `/` | Proveedor / Encargado | Crea un producto (`multipart/form-data`, imagen obligatoria en el campo `imagen`) |
+| PATCH | `/:id` | Proveedor / Encargado | Actualiza un producto (admite nueva `imagen`; la antigua se borra de Cloudinary) |
+| DELETE | `/:id` | Proveedor / Encargado | Elimina un producto y su imagen |
+
+Un usuario **proveedor** solo ve, crea, edita y borra los productos de su propia empresa: los productos que crea se asignan siempre a su proveedor y no puede pasarlos a otro. Para él, los productos de otras empresas no existen (`404`). El **encargado** puede gestionar cualquier producto, pero al crearlo tiene que indicar un `proveedor` existente.
 
 ### Pedidos — `/api/pedidos`
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/` | Empleado | Crea un pedido para el bar del usuario |
-| GET | `/historial` | Encargado / Proveedor | Historial de pedidos: el encargado ve los de su bar y el proveedor los que ha recibido su empresa |
+| POST | `/` | Empleado | Crea un pedido para uno de los bares a los que pertenece el empleado (campo `bar`) |
+| GET | `/historial` | Encargado / Proveedor | Historial de pedidos: el encargado ve los de todos sus bares (o los de uno con `?bar=<id>`) y el proveedor los que ha recibido su empresa |
 
 Ejemplo de cuerpo para crear un pedido:
 
 ```json
 {
   "proveedor": "<id_proveedor>",
+  "bar": "<id_bar>",
   "productos": [
     { "producto": "<id_producto>", "cantidad": 3 },
     { "producto": "<id_producto>", "cantidad": 1 }
@@ -202,12 +236,32 @@ Ejemplo de cuerpo para crear un pedido:
 }
 ```
 
+### Proveedores — `/api/proveedores`
+
+Los proveedores son comunes a todos los bares.
+
+| Método | Ruta | Acceso | Descripción |
+|---|---|---|---|
+| GET | `/?nombre=<texto>` | Cualquier usuario autenticado | Lista los proveedores; `nombre` (opcional) filtra por nombre de empresa |
+| GET | `/:id` | Cualquier usuario autenticado | Ver un proveedor |
+| POST | `/` | Encargado | Crea un proveedor (`nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto`) |
+| PATCH | `/:id` | Encargado / Proveedor de esa empresa | Edita los datos del proveedor; un usuario proveedor solo puede editar el suyo |
+| DELETE | `/:id` | Encargado | Borra el proveedor en cascada: sus productos y sus pedidos se eliminan, y sus usuarios pasan a ser empleados |
+
 ### Bares — `/api/bares`
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| GET | `/:id/pedidos` | Encargado | Pedidos de un bar |
-| GET | `/:id/empleados` | Encargado | Empleados de un bar |
+| POST | `/` | Encargado | Crea un bar (`nombre`, `ubicacion`); el encargado queda como su responsable |
+| GET | `/` | Encargado | Lista los bares del encargado |
+| PATCH | `/:id` | Encargado del bar | Cambia el nombre del bar (la ubicación no se puede modificar) |
+| DELETE | `/:id` | Encargado del bar | Borra el bar y sus pedidos, y lo quita de sus empleados |
+| GET | `/:id/pedidos` | Encargado del bar | Pedidos de un bar |
+| GET | `/:id/empleados` | Encargado del bar | Empleados de un bar |
+| POST | `/:id/empleados` | Encargado del bar | Añade un empleado al bar (`{ "usuarioId": "<id>" }`) |
+| DELETE | `/:id/empleados/:usuarioId` | Encargado del bar | Quita un empleado del bar |
+
+Todas las rutas con `/:id` comprueban que el bar pertenece al encargado autenticado; si no, devuelven `403`.
 
 Cualquier ruta que no exista devuelve `404 { "error": "Route not found" }`.
 
@@ -229,7 +283,8 @@ La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 
 - [ ] Frontend en **React**: catálogo visual, carrito de compra y panel de pedidos
 - [ ] Envío automático del pedido al proveedor por **WhatsApp** (generación de la URL de WhatsApp Web)
-- [ ] CRUD completo de **proveedores** y **bares** desde la API
+- [x] Gestión de **bares** desde la API (crear, renombrar, borrar y asignar empleados)
+- [x] CRUD completo de **proveedores** desde la API
 - [ ] Gestión del **estado** de los pedidos (`pendiente` → `enviado` → `entregado`)
 
 ---

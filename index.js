@@ -10,6 +10,7 @@ const pedidosRoutes = require('./src/routes/pedidos.routes');
 const baresRoutes = require('./src/routes/bares.routes');
 const usuariosRoutes = require('./src/routes/usuarios.routes');
 const productosRoutes = require('./src/routes/productos.routes');
+const proveedoresRoutes = require('./src/routes/proveedores.routes');
 
 
 
@@ -24,6 +25,7 @@ app.use('/api/pedidos', pedidosRoutes);
 app.use('/api/bares', baresRoutes);
 app.use('/api/usuarios', usuariosRoutes);
 app.use('/api/productos', productosRoutes);
+app.use('/api/proveedores', proveedoresRoutes);
 
 app.use((req, res, next) => {
     return res.status(404).json({ error: 'Route not found' });

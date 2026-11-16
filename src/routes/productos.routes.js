@@ -5,10 +5,10 @@ const {subidaProducto} = require('../middlewares/file');
 
 const router = express.Router();
 
-router.get('/', [isAuth, permitirRoles('empleado', 'encargado')], verProductos);
-router.get('/buscar/nombre/:nombre', [isAuth, permitirRoles('empleado', 'encargado')], buscarProductoPorNombre);
-router.get('/buscar/categoria/:categoria', [isAuth, permitirRoles('empleado', 'encargado')], buscarProductoPorCategoria);
-router.get('/buscar/proveedor/:proveedor', [isAuth, permitirRoles('empleado', 'encargado')], buscarProductoPorProveedor);
+router.get('/', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], verProductos);
+router.get('/buscar/nombre/:nombre', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], buscarProductoPorNombre);
+router.get('/buscar/categoria/:categoria', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], buscarProductoPorCategoria);
+router.get('/buscar/proveedor/:nombre', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], buscarProductoPorProveedor);
 router.post('/', [isAuth, permitirRoles('proveedor', 'encargado'), subidaProducto.single('imagen')], crearProducto);
 router.patch('/:id', [isAuth, permitirRoles('proveedor', 'encargado'), subidaProducto.single('imagen')], actualizarProducto);
 router.delete('/:id', [isAuth, permitirRoles('proveedor', 'encargado')], eliminarProducto);
