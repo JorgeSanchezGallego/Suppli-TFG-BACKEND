@@ -29,12 +29,15 @@ El proyecto completo sigue la arquitectura **MERN** (MongoDB, Express, React, No
 ```
 backend-api/
 ├── Diagramas/            # Diagramas de clases, casos de uso, estados, secuencia y Gantt
+├── Insomnia-pruebas/     # Colección de Insomnia y capturas de las pruebas de cada endpoint
 ├── src/
 │   ├── config/           # Conexión a MongoDB (db.js) y Cloudinary (cloudinary.js)
 │   ├── controllers/      # Lógica de cada recurso (usuarios, productos, pedidos, bares, proveedores)
+│   ├── data/             # Datos de prueba que carga el seed
 │   ├── middlewares/      # Autenticación JWT, control de roles y subida de archivos
 │   ├── models/           # Esquemas de Mongoose (Usuario, Bar, Proveedor, Producto, Pedido)
 │   ├── routes/           # Definición de los endpoints
+│   ├── seeds/            # Script que carga los datos de prueba (npm run seed)
 │   └── utils/            # Generación/verificación de tokens y utilidades de Cloudinary
 ├── index.js              # Punto de entrada del servidor
 ├── .env.example          # Plantilla de variables de entorno
@@ -48,7 +51,7 @@ backend-api/
 - **Node.js** 20 o superior y **npm**
 - Una base de datos **MongoDB**, ya sea local o en [MongoDB Atlas](https://www.mongodb.com/atlas)
 - Una cuenta de **[Cloudinary](https://cloudinary.com/)** para alojar las imágenes de los productos
-- Opcional: **Postman** o similar para probar los endpoints
+- Opcional: **Insomnia** (o Postman) para probar los endpoints con la colección incluida
 
 ---
 
@@ -267,15 +270,99 @@ Cualquier ruta que no exista devuelve `404 { "error": "Route not found" }`.
 
 ---
 
+## Pruebas con Insomnia
+
+En [`Insomnia-pruebas/PruebasEndpoints.yaml`](Insomnia-pruebas/PruebasEndpoints.yaml) está la colección con las peticiones de todos los endpoints, organizadas en carpetas (Usuarios, Pedidos, Proveedores, Productos y Bares), incluidos varios casos de error.
+
+### 1. Preparar los datos
+
+Con el `.env` configurado, carga los datos de prueba y arranca el servidor:
+
+```bash
+npm run seed
+```
+
+```bash
+npm run dev
+```
+
+### 2. Importar la colección
+
+En Insomnia: **Import** (o *Create → Import*) y selecciona el archivo `PruebasEndpoints.yaml`. También se puede importar en Postman.
+
+### 3. Iniciar sesión y usar el token
+
+Los tokens que trae la colección **ya han caducado** (duran 1 día), así que hay que iniciar sesión y sustituirlos:
+
+1. Ejecuta **Usuarios → Login encargado** (o cualquier login) con uno de los usuarios de prueba. Los correos, el rol de cada uno y la contraseña están en la tabla de [Datos de prueba (seed)](#datos-de-prueba-seed) y en [`src/data/usuarios.js`](src/data/usuarios.js).
+2. Copia el `token` de la respuesta.
+3. En la petición que quieras probar, abre la pestaña **Auth → Bearer Token** y pega el token.
+
+Cada endpoint necesita un rol concreto (ver la columna *Acceso* de las tablas de [Endpoints](#endpoints)). Por ejemplo:
+
+| Para probar… | Inicia sesión con |
+|---|---|
+| Bares, cambiar roles, buscar usuarios, crear o borrar proveedores | `encargado1@suppli.test` |
+| Crear pedidos | `empleado1@suppli.test` |
+| Historial de su empresa, gestionar sus productos | `proveedor1@suppli.test` |
+
+### 4. Sustituir los IDs
+
+Los IDs que aparecen en las URL y en los cuerpos de las peticiones son los de la base de datos con la que se hicieron las pruebas. Cada vez que se ejecuta el seed se generan IDs nuevos, así que hay que cogerlos de las respuestas de los listados:
+
+| Necesitas el ID de… | Obtenlo con | Rol |
+|---|---|---|
+| Un usuario | `GET /api/usuarios?nombre=<nombre>` | Encargado |
+| Un bar | `GET /api/bares` (o `user.bares` en la respuesta del login de un empleado) | Encargado / Empleado |
+| Un proveedor | `GET /api/proveedores` | Cualquiera |
+| Un producto | `GET /api/productos` | Cualquiera |
+| Un pedido | `GET /api/pedidos/historial` | Encargado / Proveedor |
+
+### 5. Crear o editar productos con imagen
+
+La petición **Productos → Crear Producto** usa un cuerpo *Multipart Form* con un archivo en el campo `imagen`. La ruta del archivo de la colección es la del equipo donde se hicieron las pruebas, así que hay que seleccionar una imagen propia (formatos permitidos: jpg, jpeg, png, gif y webp). Si Insomnia no puede leer el archivo, hay que permitir su carpeta en *Preferences → General → Security*.
+
+> Las pruebas de borrar y de cambiar roles modifican los datos. Para volver a dejarlos como al principio, ejecuta otra vez `npm run seed`.
+
+### Capturas de las pruebas
+
+En [`Insomnia-pruebas/Capturas-Endpoints/`](Insomnia-pruebas/Capturas-Endpoints) hay una captura de la prueba de cada endpoint, con la petición y la respuesta obtenida:
+
+**Usuarios**
+- [Registro de usuario](Insomnia-pruebas/Capturas-Endpoints/Usuarios/RegistroDeUsuario.png) · [Registro duplicado](Insomnia-pruebas/Capturas-Endpoints/Usuarios/RegistroDuplicado.png)
+- [Login](Insomnia-pruebas/Capturas-Endpoints/Usuarios/Login.png) · [Login fallido](Insomnia-pruebas/Capturas-Endpoints/Usuarios/LoginFallido.png)
+- [Ver usuarios](Insomnia-pruebas/Capturas-Endpoints/Usuarios/VerUsuarios.png) · [por nombre](Insomnia-pruebas/Capturas-Endpoints/Usuarios/VerUsuariosPorNombre.png) · [por apellido](Insomnia-pruebas/Capturas-Endpoints/Usuarios/VerUsuariosPorApellido.png) · [por rol](Insomnia-pruebas/Capturas-Endpoints/Usuarios/VerUsuariosPorRole.png) · [por rol y nombre](Insomnia-pruebas/Capturas-Endpoints/Usuarios/VerUsuariosPorRoleyNombre.png)
+- [Cambiar rol](Insomnia-pruebas/Capturas-Endpoints/Usuarios/CambiarRol.png)
+
+**Pedidos**
+- [Crear pedido](Insomnia-pruebas/Capturas-Endpoints/Pedidos/CrearPedido.png)
+- [Ver pedidos](Insomnia-pruebas/Capturas-Endpoints/Pedidos/VerPedidos.png) · [por bar](Insomnia-pruebas/Capturas-Endpoints/Pedidos/VerPedidosPorBar.png)
+
+**Proveedores**
+- [Ver proveedores](Insomnia-pruebas/Capturas-Endpoints/Proveedor/VerProveedores.png) · [por nombre](Insomnia-pruebas/Capturas-Endpoints/Proveedor/VerProveedorPorNombre.png) · [por ID](Insomnia-pruebas/Capturas-Endpoints/Proveedor/VerProveedorPorID.png)
+- [Crear proveedor](Insomnia-pruebas/Capturas-Endpoints/Proveedor/CrearProveedor.png) · [Editar proveedor](Insomnia-pruebas/Capturas-Endpoints/Proveedor/EditarProveedor.png) · [Borrar proveedor](Insomnia-pruebas/Capturas-Endpoints/Proveedor/BorrarProveedor.png)
+
+**Productos**
+- [Ver productos](Insomnia-pruebas/Capturas-Endpoints/Productos/VerProductos.png)
+- [Buscar por nombre](Insomnia-pruebas/Capturas-Endpoints/Productos/BuscarPorNombre.png) · [por categoría](Insomnia-pruebas/Capturas-Endpoints/Productos/BuscarPorCategoria.png) · [por proveedor](Insomnia-pruebas/Capturas-Endpoints/Productos/BuscarPorProveedor.png)
+- [Crear producto](Insomnia-pruebas/Capturas-Endpoints/Productos/CrearProducto.png) · [Editar producto](Insomnia-pruebas/Capturas-Endpoints/Productos/EditarProducto.png) · [Borrar producto](Insomnia-pruebas/Capturas-Endpoints/Productos/BorrarProducto.png)
+
+**Bares**
+- [Crear bar](Insomnia-pruebas/Capturas-Endpoints/Bar/CrearBar.png) · [Ver mis bares](Insomnia-pruebas/Capturas-Endpoints/Bar/VerBares.png) · [Borrar bar](Insomnia-pruebas/Capturas-Endpoints/Bar/BorrarBar.png)
+- [Añadir empleado](Insomnia-pruebas/Capturas-Endpoints/Bar/AñadirEmpleadoBar.png) · [Quitar empleado](Insomnia-pruebas/Capturas-Endpoints/Bar/QuitarEmpleadoBar.png) · [Ver empleados](Insomnia-pruebas/Capturas-Endpoints/Bar/VerEmpleadosBar.png)
+- [Ver pedidos del bar](Insomnia-pruebas/Capturas-Endpoints/Bar/VerPedidosBar.png)
+
+---
+
 ## Diagramas
 
 La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 
-- [Diagrama de clases](Diagramas/diagramadeclases2.png)
-- [Diagrama de casos de uso](Diagramas/casosdeuso.png)
-- [Diagrama de estados](Diagramas/diagramadeestados.png)
-- [Diagrama de secuencia](Diagramas/diagramadesecuencia.png)
-- [Diagrama de Gantt](Diagramas/DiagramadeGantt.png)
+- [Diagrama de clases](Diagramas/DiagramaDeClasesV2.png)
+- [Diagrama de casos de uso](Diagramas/DiagramaDeCasosDeUsoV2.png)
+- [Diagrama de estados](Diagramas/DiagramaDeEstadosV2.png)
+- [Diagrama de secuencia](Diagramas/DiagramaDeSecuenciaV2.png)
+- [Diagrama de Gantt](Diagramas/DiagramaGanttV2.png)
 
 ---
 
