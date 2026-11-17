@@ -4,37 +4,62 @@ const Bar = require('../models/bar.model');
 const Proveedor = require('../models/proveedor.model');
 const bcrypt = require('bcrypt');
 const {generarToken} = require('../utils/token');
-const {borrarImagenCloudinary} = require('../utils/cloudinary.utils');
 const {regexBusqueda} = require('../utils/regex');
 
+/**
+ * Roles que puede tener un usuario.
+ * @type {string[]}
+ */
 const ROLES = ['empleado', 'encargado', 'proveedor'];
 
+/**
+ * Registra un nuevo usuario.
+ * Todos los usuarios se registran con el rol `empleado` y sin bares: los campos
+ * `role`, `proveedor` y `bares` del cuerpo se ignoran, porque solo un encargado
+ * puede cambiarlos después.
+ *
+ * Ruta: `POST /api/usuarios/registro` (pública).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {Object} req.body - Datos del usuario: `nombre`, `apellidos`, `fechaNacimiento`,
+ *   `residencia`, `correo`, `contraseña` (mínimo 8 caracteres) y `telefono`.
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `201` con el usuario creado (con la contraseña a `null`),
+ *   o `400` si el correo ya está registrado o falta algún dato obligatorio.
+ */
 const registrarUsuario = async (req, res) => {
     try {
         const {bares, role, proveedor, ...datos} = req.body;
         const user = new Usuario({...datos, role: 'empleado'});
         const userExistente = await Usuario.findOne({correo: user.correo});
         if (userExistente) {
-            if (req.file) {
-                await borrarImagenCloudinary(req.file.path);
-            }
             return res.status(400).json({error: 'El usuario ya está registrado'});
-        }
-        if (req.file) {
-            user.imagen = req.file.path;
         }
 
         const userGuardado = await user.save();
         userGuardado.contraseña = null;
         res.status(201).json(userGuardado);
     } catch (error) {
-        if (req.file) {
-            await borrarImagenCloudinary(req.file.path);
-        }
         res.status(400).json({error: "error al registrar usuario", details: error.message});
     }
 };
 
+/**
+ * Inicia sesión con correo y contraseña.
+ * Compara la contraseña con el hash guardado (bcrypt) y, si es correcta, genera un
+ * token JWT válido durante 1 día. Si el correo no existe o la contraseña no coincide,
+ * devuelve el mismo mensaje para no revelar qué correos están registrados.
+ *
+ * Ruta: `POST /api/usuarios/login` (pública).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {Object} req.body - Credenciales: `correo` y `contraseña`.
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `200` con `{ user, token }` (el usuario sin contraseña),
+ *   o `401` si las credenciales no son correctas.
+ */
 const loginUsuario = async (req, res) => {
     try {
         const {correo, contraseña} = req.body;
@@ -54,6 +79,23 @@ const loginUsuario = async (req, res) => {
     }
 };
 
+/**
+ * Lista los usuarios, con filtros opcionales por nombre y por rol.
+ * El filtro `nombre` busca el texto en el nombre y en los apellidos, sin distinguir
+ * mayúsculas. Cada usuario se devuelve sin contraseña, con sus bares (nombre y
+ * ubicación) y, si es proveedor, con el nombre de su empresa.
+ *
+ * Ruta: `GET /api/usuarios` (solo encargados).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {Object} req.query - Filtros opcionales.
+ * @param {string} [req.query.nombre] - Texto a buscar en el nombre o los apellidos.
+ * @param {string} [req.query.role] - Rol: `empleado`, `encargado` o `proveedor`.
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `200` con la lista de usuarios ordenada por nombre,
+ *   o `400` si el rol indicado no existe.
+ */
 const buscarUsuarios = async (req, res) => {
     try {
         const filtro = {};
@@ -79,6 +121,31 @@ const buscarUsuarios = async (req, res) => {
     }
 };
 
+/**
+ * Cambia el rol de un usuario.
+ * Reglas:
+ * - Un encargado no puede cambiar su propio rol.
+ * - Un encargado que todavía tiene bares no puede dejar de ser encargado.
+ * - Para el rol `proveedor` hay que indicar una empresa proveedora existente.
+ * - Al dejar de ser `proveedor`, el usuario se desvincula de su empresa.
+ * - Al pasar a `encargado` o `proveedor`, el usuario deja de pertenecer a sus bares.
+ *
+ * Ruta: `PATCH /api/usuarios/:id/rol` (solo encargados).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {Object} req.params - Parámetros de la ruta.
+ * @param {string} req.params.id - ID del usuario al que se le cambia el rol.
+ * @param {Object} req.body - Nuevo rol.
+ * @param {string} req.body.role - `empleado`, `encargado` o `proveedor`.
+ * @param {string} [req.body.proveedor] - ID de la empresa proveedora (obligatorio si `role` es `proveedor`).
+ * @param {Object} req.user - Encargado autenticado (lo añade el middleware `isAuth`).
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `200` con el usuario actualizado (sin contraseña);
+ *   `400` si el ID o el rol no son válidos, si falta el proveedor, si el encargado
+ *   intenta cambiar su propio rol o si el usuario es un encargado con bares;
+ *   `404` si el usuario o el proveedor no existen.
+ */
 const cambiarRol = async (req, res) => {
     try {
         const {id} = req.params;
