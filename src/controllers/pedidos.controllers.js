@@ -101,4 +101,66 @@ const verPedidos = async (req, res) => {
     }
 };
 
-module.exports = {crearPedido, verPedidos};
+const SIGUIENTE_ESTADO = {
+    pendiente: 'enviado',
+    enviado: 'entregado'
+};
+
+const cambiarEstadoPedido = async (req, res) => {
+    try {
+        const {id} = req.params;
+        const {estado} = req.body;
+
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({error: "ID de pedido no válido"});
+        }
+        if (!['enviado', 'entregado'].includes(estado)) {
+            return res.status(400).json({error: "Estado no válido. Estados posibles: enviado, entregado"});
+        }
+
+        const pedido = await Pedido.findById(id);
+        if (!pedido) {
+            return res.status(404).json({error: "Pedido no encontrado"});
+        }
+
+        const bar = await Bar.findById(pedido.bar).select('encargado');
+        const esEncargadoDelBar = req.user.role === 'encargado' && bar && bar.encargado.equals(req.user._id);
+        const esEmpleadoDelBar = req.user.role === 'empleado' && req.user.bares.some((barId) => barId.equals(pedido.bar));
+        const esProveedorDelPedido = req.user.role === 'proveedor' && req.user.proveedor && req.user.proveedor.equals(pedido.proveedor);
+
+        if (!esEncargadoDelBar && !esEmpleadoDelBar && !esProveedorDelPedido) {
+            return res.status(404).json({error: "Pedido no encontrado"});
+        }
+
+        if (SIGUIENTE_ESTADO[pedido.estado] !== estado) {
+            return res.status(400).json({
+                error: pedido.estado === 'entregado'
+                    ? "El pedido ya está entregado y no se puede modificar"
+                    : `Un pedido ${pedido.estado} solo puede pasar a ${SIGUIENTE_ESTADO[pedido.estado]}`
+            });
+        }
+
+        const puedeCambiar = estado === 'enviado'
+            ? esProveedorDelPedido || esEncargadoDelBar
+            : esEncargadoDelBar || esEmpleadoDelBar;
+        if (!puedeCambiar) {
+            return res.status(403).json({
+                error: estado === 'enviado'
+                    ? "Solo el proveedor del pedido o el encargado del bar pueden marcarlo como enviado"
+                    : "Solo el encargado o los empleados del bar pueden marcarlo como entregado"
+            });
+        }
+
+        pedido.estado = estado;
+        const actualizado = await pedido.save();
+        await actualizado.populate([
+            {path: 'bar', select: 'nombre ubicacion'},
+            {path: 'usuario', select: 'nombre apellidos'}
+        ]);
+        res.status(200).json(actualizado);
+    } catch (error) {
+        res.status(400).json({error: "error al cambiar el estado del pedido", details: error.message});
+    }
+};
+
+module.exports = {crearPedido, verPedidos, cambiarEstadoPedido};

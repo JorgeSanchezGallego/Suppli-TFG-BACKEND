@@ -225,6 +225,7 @@ Un usuario **proveedor** solo ve, crea, edita y borra los productos de su propia
 |---|---|---|---|
 | POST | `/` | Empleado | Crea un pedido para uno de los bares a los que pertenece el empleado (campo `bar`) |
 | GET | `/historial` | Encargado / Proveedor | Historial de pedidos: el encargado ve los de todos sus bares (o los de uno con `?bar=<id>`) y el proveedor los que ha recibido su empresa |
+| PATCH | `/:id/estado` | Empleado / Encargado / Proveedor | Avanza el estado del pedido (`{ "estado": "enviado" }` o `{ "estado": "entregado" }`) |
 
 Ejemplo de cuerpo para crear un pedido:
 
@@ -238,6 +239,15 @@ Ejemplo de cuerpo para crear un pedido:
   ]
 }
 ```
+
+**Estados del pedido.** Todo pedido se crea como `pendiente` y solo puede avanzar al siguiente estado; no se puede volver atrás ni saltarse ninguno:
+
+| Cambio | Quién puede hacerlo |
+|---|---|
+| `pendiente` → `enviado` | El proveedor al que se hizo el pedido o el encargado del bar |
+| `enviado` → `entregado` | El encargado del bar o cualquier empleado de ese bar |
+
+Un pedido `entregado` ya no se puede modificar. Si el usuario no tiene relación con el pedido (no es de su bar ni de su empresa), la API responde `404`, como si no existiera.
 
 ### Proveedores — `/api/proveedores`
 
@@ -372,7 +382,7 @@ La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 - [ ] Envío automático del pedido al proveedor por **WhatsApp** (generación de la URL de WhatsApp Web)
 - [x] Gestión de **bares** desde la API (crear, renombrar, borrar y asignar empleados)
 - [x] CRUD completo de **proveedores** desde la API
-- [ ] Gestión del **estado** de los pedidos (`pendiente` → `enviado` → `entregado`)
+- [x] Gestión del **estado** de los pedidos (`pendiente` → `enviado` → `entregado`)
 
 ---
 
