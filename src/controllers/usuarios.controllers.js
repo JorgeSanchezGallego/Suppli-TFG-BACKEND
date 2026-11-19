@@ -80,6 +80,31 @@ const loginUsuario = async (req, res) => {
 };
 
 /**
+ * Devuelve los datos actualizados del usuario que ha iniciado sesión.
+ * Sirve para que el frontend refresque la sesión, por ejemplo cuando un encargado
+ * acaba de añadir al empleado a un bar. Se devuelve sin contraseña, con sus bares
+ * (nombre y ubicación) y, si es proveedor, con el nombre de su empresa.
+ *
+ * Ruta: `GET /api/usuarios/yo` (cualquier usuario autenticado).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express, con el usuario en `req.user`.
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `200` con el usuario, o `400` si falla la consulta.
+ */
+const verUsuarioActual = async (req, res) => {
+    try {
+        const usuario = await Usuario.findById(req.user._id)
+            .select('-contraseña')
+            .populate('bares', 'nombre ubicacion')
+            .populate('proveedor', 'nombre_empresa');
+        res.status(200).json(usuario);
+    } catch (error) {
+        res.status(400).json({error: "error al obtener el usuario", details: error.message});
+    }
+};
+
+/**
  * Lista los usuarios, con filtros opcionales por nombre y por rol.
  * El filtro `nombre` busca el texto en el nombre y en los apellidos, sin distinguir
  * mayúsculas. Cada usuario se devuelve sin contraseña, con sus bares (nombre y
@@ -196,4 +221,4 @@ const cambiarRol = async (req, res) => {
     }
 };
 
-module.exports = {registrarUsuario, loginUsuario, buscarUsuarios, cambiarRol};
+module.exports = {registrarUsuario, loginUsuario, verUsuarioActual, buscarUsuarios, cambiarRol};
