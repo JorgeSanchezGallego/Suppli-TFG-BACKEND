@@ -283,7 +283,7 @@ Cualquier ruta que no exista devuelve `404 { "error": "Route not found" }`.
 
 ## Pruebas con Insomnia
 
-En [`Insomnia-pruebas/PruebasEndpoints.yaml`](Insomnia-pruebas/PruebasEndpoints.yaml) está la colección con las peticiones de todos los endpoints, organizadas en carpetas (Usuarios, Pedidos, Proveedores, Productos y Bares), incluidos varios casos de error.
+En [`Insomnia-pruebas/PruebasEndpoints.yaml`](Insomnia-pruebas/PruebasEndpoints.yaml) está la colección con las peticiones de todos los endpoints, organizadas en carpetas (Usuarios, Pedidos, Proveedores, Productos y Bares). Dentro de cada una hay una subcarpeta de **pruebas denegadas** (*Peticiones Denegadas*, *Pedidos Denegados*, *Proveedores Denegados*, *Productos Denegados* y *Bares Denegados*) con peticiones que la API debe rechazar: datos que faltan o no son válidos, falta de permisos y recursos de otro usuario. Están resumidas en [Pruebas denegadas](#pruebas-denegadas).
 
 ### 1. Preparar los datos
 
@@ -362,6 +362,26 @@ En [`Insomnia-pruebas/Capturas-Endpoints/`](Insomnia-pruebas/Capturas-Endpoints)
 - [Crear bar](Insomnia-pruebas/Capturas-Endpoints/Bar/CrearBar.png) · [Ver mis bares](Insomnia-pruebas/Capturas-Endpoints/Bar/VerBares.png) · [Borrar bar](Insomnia-pruebas/Capturas-Endpoints/Bar/BorrarBar.png)
 - [Añadir empleado](Insomnia-pruebas/Capturas-Endpoints/Bar/AñadirEmpleadoBar.png) · [Quitar empleado](Insomnia-pruebas/Capturas-Endpoints/Bar/QuitarEmpleadoBar.png) · [Ver empleados](Insomnia-pruebas/Capturas-Endpoints/Bar/VerEmpleadosBar.png)
 - [Ver pedidos del bar](Insomnia-pruebas/Capturas-Endpoints/Bar/VerPedidosBar.png)
+
+### Pruebas denegadas
+
+Estas pruebas comprueban que la API rechaza las peticiones incorrectas con el código y el mensaje adecuados. Ninguna modifica datos, así que se pueden repetir sin volver a ejecutar el seed. Las capturas están en la subcarpeta `Denegadas/` de cada recurso.
+
+| Recurso | Prueba | Petición | Respuesta | Captura |
+|---|---|---|---|---|
+| Usuarios | Login con contraseña incorrecta | `POST /api/usuarios/login` | `401` Usuario o contraseña incorrectos | [Ver](Insomnia-pruebas/Capturas-Endpoints/Usuarios/Denegadas/LoginFallido.png) |
+| Usuarios | Registro sin el campo `nombre` | `POST /api/usuarios/registro` | `400` error al registrar usuario (`nombre` es obligatorio) | [Ver](Insomnia-pruebas/Capturas-Endpoints/Usuarios/Denegadas/RegistroSinCampos.png) |
+| Usuarios | Cambiar un rol sin ser encargado | `PATCH /api/usuarios/:id/rol` | `403` Solo los encargados pueden acceder a esta ruta | [Ver](Insomnia-pruebas/Capturas-Endpoints/Usuarios/Denegadas/ProhibidoCambioRole.png) |
+| Pedidos | Pedido sin productos | `POST /api/pedidos` | `400` No se proporcionaron productos para el pedido | [Ver](Insomnia-pruebas/Capturas-Endpoints/Pedidos/Denegadas/PedidoVacio.png) |
+| Pedidos | Pedido para un bar al que no pertenece el empleado | `POST /api/pedidos` | `403` No perteneces a ese bar | [Ver](Insomnia-pruebas/Capturas-Endpoints/Pedidos/Denegadas/PedidoAOtroBar.png) |
+| Proveedores | ID con formato no válido | `GET /api/proveedores/123` | `400` ID de proveedor no válido | [Ver](Insomnia-pruebas/Capturas-Endpoints/Proveedor/Denegadas/ProveedorIDNovalido.png) |
+| Proveedores | Un proveedor edita otra empresa | `PATCH /api/proveedores/:id` | `403` Solo puedes editar tu propio proveedor | [Ver](Insomnia-pruebas/Capturas-Endpoints/Proveedor/Denegadas/ProveedorEditaOtro.png) |
+| Proveedores | Editar sin enviar ningún campo | `PATCH /api/proveedores/:id` | `400` No hay nada que actualizar | [Ver](Insomnia-pruebas/Capturas-Endpoints/Proveedor/Denegadas/EditarProveedorVacio.png) |
+| Productos | Crear un producto sin imagen | `POST /api/productos` | `400` Se requiere una imagen para el producto | [Ver](Insomnia-pruebas/Capturas-Endpoints/Productos/Denegadas/ProductoSinImagen.png) |
+| Productos | Crear un producto siendo empleado | `POST /api/productos` | `403` Roles permitidos: proveedor, encargado | [Ver](Insomnia-pruebas/Capturas-Endpoints/Productos/Denegadas/ProductoSinPermiso.png) |
+| Bares | Renombrar un bar sin nombre | `PATCH /api/bares/:id` | `400` El campo nombre es obligatorio | [Ver](Insomnia-pruebas/Capturas-Endpoints/Bar/Denegadas/BarNombreObligatorio.png) |
+| Bares | Añadir un empleado a un bar de otro encargado | `POST /api/bares/:id/empleados` | `403` No eres el encargado de este bar | [Ver](Insomnia-pruebas/Capturas-Endpoints/Bar/Denegadas/BarPermisosAñadir.png) |
+| Bares | Añadir a un usuario que no es empleado | `POST /api/bares/:id/empleados` | `400` Solo se pueden añadir usuarios con rol empleado | [Ver](Insomnia-pruebas/Capturas-Endpoints/Bar/Denegadas/BaresNoEmpleados.png) |
 
 ---
 
