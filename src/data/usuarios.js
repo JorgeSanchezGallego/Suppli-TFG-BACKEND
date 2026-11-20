@@ -7,7 +7,7 @@ const base = {
 };
 
 const usuarios = [
-    {...base, nombre: 'Carlos', apellidos: 'Martín López', correo: 'encargado1@suppli.test', telefono: '600000001', role: 'encargado'},
+    {...base, nombre: 'Carlos', apellidos: 'Martín López', correo: 'encargado1@suppli.test', telefono: '600000001', role: 'encargado', bares: ['Kiosko Gómiz', 'Noray', 'Soho Parc']},
     {...base, nombre: 'Lucía', apellidos: 'Fernández Díaz', correo: 'encargado2@suppli.test', telefono: '600000002', role: 'encargado'},
 
     {...base, nombre: 'Ana', apellidos: 'García Pérez', correo: 'empleado1@suppli.test', telefono: '600000003', role: 'empleado', bares: ['Kiosko Gómiz', 'Noray']},

@@ -94,7 +94,7 @@ collection:
         meta:
           id: req_67b5034834c84b76a8d574782c929cc9
           created: 1794848387121
-          modified: 1794849457208
+          modified: 1795157055090
           isPrivate: false
           description: ""
           sortKey: -1794848387121
@@ -158,7 +158,7 @@ collection:
         meta:
           id: req_0719c0ce46b64ac9a9ad56bff878f8bf
           created: 1794848544507
-          modified: 1794848575693
+          modified: 1795159323436
           isPrivate: false
           description: ""
           sortKey: -1794848309791.75
@@ -190,22 +190,14 @@ collection:
         meta:
           id: req_3626ae7f9dd84bd2851e18692716746c
           created: 1794848601251
-          modified: 1794849545511
+          modified: 1795159386239
           isPrivate: false
           description: ""
           sortKey: -1794848601251
         method: GET
         body:
           mimeType: application/json
-          text: |-
-            {
-              "bar": "6afb343586670238b42f4b50",
-              "proveedor": "<id_proveedor>",
-              "productos": [
-                { "producto": "<id_refresco_cola>", "cantidad": 24 },
-                { "producto": "<id_agua_mineral>", "cantidad": 12 }
-              ]
-            }
+          text: ""
         headers:
           - name: Content-Type
             value: application/json
@@ -215,7 +207,7 @@ collection:
             disabled: false
         authentication:
           type: bearer
-          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmIzNDM0ODY2NzAyMzhiNDJmNGI0OCIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NDg0ODU3NiwiZXhwIjoxNzk0OTM0OTc2fQ.imyFwjjQ261qRSOhgiJaj-sA1JRedmdj1UEO-t7AOVQ
+          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmZmNGM2ZmE2N2I4YTRjNTZjMzU0ZiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1OTMyNCwiZXhwIjoxNzk1MjQ1NzI0fQ.e6nM3RolykfOx9FiZ16jiEhzq-eNI20ydP5PjjuhVIs
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -333,7 +325,7 @@ collection:
         meta:
           id: req_6242ee724f9e4e48a9947ca20a9f5c51
           created: 1794848946180
-          modified: 1794849096414
+          modified: 1794903113716
           isPrivate: false
           description: ""
           sortKey: -1794848547718.5
@@ -342,7 +334,7 @@ collection:
           mimeType: application/json
           text: |-
             {
-              "role": "proveedor"
+              "role": "encargado"
             }
         headers:
           - name: Content-Type
@@ -394,6 +386,117 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - name: Peticiones Denegadas
+        meta:
+          id: fld_c9caa7caa36a45e6bd02e95e74702282
+          created: 1795156905027
+          modified: 1795156905027
+          sortKey: -1795156905027
+          description: ""
+        children:
+          - url: http://localhost:3000/api/usuarios/login
+            name: Login usuario Fallido
+            meta:
+              id: req_c22034c06bd146c6af46b4104b2a5ef5
+              created: 1795157066023
+              modified: 1795157072641
+              isPrivate: false
+              description: ""
+              sortKey: -1795157069398
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "correo": "empleado2@suppli.test",
+                  "contraseña": "Prueba124"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/usuarios/registro
+            name: Registrar Usuario Fallido
+            meta:
+              id: req_8fbe178ee4cd482a9f81f9bc3a064fbc
+              created: 1795157089281
+              modified: 1795157307921
+              isPrivate: false
+              description: ""
+              sortKey: -1795157069498
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  
+                  "apellidos": "Sánchez Gallego",
+                  "fechaNacimiento": "1998-03-21",
+                  "residencia": "Alicante",
+                  "correo": "jorge@suppli.test",
+                  "contraseña": "Prueba1234",
+                  "telefono": "600123456"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/usuarios/6afc0dc58ce8d13856e3aa55/rol
+            name: Cambiar rol Fallido
+            meta:
+              id: req_65f0c259252947a89b564182faeb53c9
+              created: 1795157358014
+              modified: 1795157418455
+              isPrivate: false
+              description: ""
+              sortKey: -1795157069448
+            method: PATCH
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "role": "encargado"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1NSIsImVtYWlsIjoiZW1wbGVhZG8yQHN1cHBsaS50ZXN0IiwiaWF0IjoxNzk1MTU3MDU2LCJleHAiOjE3OTUyNDM0NTZ9.qLP-zTchYroUN2pt1LJwrDUgFsWDsGJFdr2bOFOCl_o
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
   - name: Pedidos
     meta:
       id: fld_b8756655373145e9abfbb99dbcdd25dd
@@ -485,6 +588,95 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - name: Pedidos Denegados
+        meta:
+          id: fld_2cf76af7a0474ab3afb4d4fcc8b5af9b
+          created: 1795157527165
+          modified: 1795157527165
+          sortKey: -1795157527165
+          description: ""
+        children:
+          - url: http://localhost:3000/api/pedidos
+            name: Crear Pedido Fallido
+            meta:
+              id: req_9aaf1009fad64205a11895f487b69067
+              created: 1795157552141
+              modified: 1795157607488
+              isPrivate: false
+              description: ""
+              sortKey: -1795157554713
+            method: POST
+            body:
+              mimeType: application/json
+              text: |+
+                {
+                  "bar": "6afb343586670238b42f4b50",
+                  "proveedor": "6afb343486670238b42f4b45",
+                  "productos": [
+                   
+                  ]
+                }
+
+
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1NSIsImVtYWlsIjoiZW1wbGVhZG8yQHN1cHBsaS50ZXN0IiwiaWF0IjoxNzk1MTU3MDU2LCJleHAiOjE3OTUyNDM0NTZ9.qLP-zTchYroUN2pt1LJwrDUgFsWDsGJFdr2bOFOCl_o
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/pedidos
+            name: Crear Pedido Otro Bar
+            meta:
+              id: req_09558c267fd4475690930a8a5ab3402f
+              created: 1795157653667
+              modified: 1795157750610
+              isPrivate: false
+              description: ""
+              sortKey: -1795157554813
+            method: POST
+            body:
+              mimeType: application/json
+              text: |+
+                {
+                  "bar": "6afc0dc68ce8d13856e3aa5b",
+                  "proveedor": "6afb343486670238b42f4b45",
+                  "productos": [
+                    { "producto": "6afb343586670238b42f4b53", "cantidad": 24 },
+                    { "producto": "6afb343586670238b42f4b55", "cantidad": 12 }
+                  ]
+                }
+
+
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1NSIsImVtYWlsIjoiZW1wbGVhZG8yQHN1cHBsaS50ZXN0IiwiaWF0IjoxNzk1MTU3MDU2LCJleHAiOjE3OTUyNDM0NTZ9.qLP-zTchYroUN2pt1LJwrDUgFsWDsGJFdr2bOFOCl_o
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
   - name: Proveedores
     meta:
       id: fld_253b8dec14c845dfbb1759c7d53c611b
@@ -498,7 +690,7 @@ collection:
         meta:
           id: req_d39c107d2a984b058d9f30634ead0edf
           created: 1794849596363
-          modified: 1794900566703
+          modified: 1795158394398
           isPrivate: false
           description: ""
           sortKey: -1794854117943
@@ -510,7 +702,7 @@ collection:
             disabled: false
         authentication:
           type: bearer
-          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmIzNDM0ODY2NzAyMzhiNDJmNGI0OCIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NDg0ODU3NiwiZXhwIjoxNzk0OTM0OTc2fQ.imyFwjjQ261qRSOhgiJaj-sA1JRedmdj1UEO-t7AOVQ
+          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1MiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1ODM3OCwiZXhwIjoxNzk1MjQ0Nzc4fQ.tI36tC4NUXan4bcNZ_5y8IWYq5rrlXsLwGI42SFXESA
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -674,6 +866,109 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - name: Proveedores Denegados
+        meta:
+          id: fld_2f577215e7e447c2bcfa53043d65650d
+          created: 1795158021422
+          modified: 1795158021422
+          sortKey: -1795158021422
+          description: ""
+        children:
+          - url: http://localhost:3000/api/proveedores/123
+            name: Ver Proveedor Fallido
+            meta:
+              id: req_977e0c4e94c34661be5d270699a7d586
+              created: 1795158187239
+              modified: 1795158229953
+              isPrivate: false
+              description: ""
+              sortKey: -1795158190288
+            method: GET
+            headers:
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM2OGNlOGQxMzg1NmUzYWE1OCIsImVtYWlsIjoicHJvdmVlZG9yMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1ODIxNiwiZXhwIjoxNzk1MjQ0NjE2fQ.XNG3O3NNuuOIdkfNIdUkofZWE1bcIWqzEbMBgTi4bwg
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/proveedores/6afc0dc58ce8d13856e3aa50
+            name: Editar Proveedor Fallido
+            meta:
+              id: req_6490919d8d034dd1a102d7504274a98d
+              created: 1795158272057
+              modified: 1795158530130
+              isPrivate: false
+              description: ""
+              sortKey: -1795158190388
+            method: PATCH
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "telefono": "699000111",
+                  "dias_reparto": ["martes"]
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM2OGNlOGQxMzg1NmUzYWE1OCIsImVtYWlsIjoicHJvdmVlZG9yMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1ODIxNiwiZXhwIjoxNzk1MjQ0NjE2fQ.XNG3O3NNuuOIdkfNIdUkofZWE1bcIWqzEbMBgTi4bwg
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/proveedores/6afc0dc58ce8d13856e3aa4f
+            name: Editar Proveedor Fallido Sin Campos
+            meta:
+              id: req_c30baa8a967742eb8627365baefc5779
+              created: 1795158504043
+              modified: 1795158544429
+              isPrivate: false
+              description: ""
+              sortKey: -1795158190338
+            method: PATCH
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+              - name: User-Agent
+                value: insomnia/12.3.0
+                description: ""
+                disabled: false
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM2OGNlOGQxMzg1NmUzYWE1OCIsImVtYWlsIjoicHJvdmVlZG9yMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1ODIxNiwiZXhwIjoxNzk1MjQ0NjE2fQ.XNG3O3NNuuOIdkfNIdUkofZWE1bcIWqzEbMBgTi4bwg
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
   - name: Productos
     meta:
       id: fld_d24d52953e374ba19fcbfb23ea801090
@@ -896,6 +1191,122 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - name: Productos Denegados
+        meta:
+          id: fld_16bece6a0e48403c984e357fa7bb92a4
+          created: 1795157822757
+          modified: 1795157822757
+          sortKey: -1795157822757
+          description: ""
+        children:
+          - url: http://localhost:3000/api/productos
+            name: Crear Producto Sin Imagen
+            meta:
+              id: req_5210ffad373645f2b6979032066eb201
+              created: 1795157837010
+              modified: 1795157877803
+              isPrivate: false
+              description: ""
+              sortKey: -1795157840556
+            method: POST
+            body:
+              mimeType: multipart/form-data
+              params:
+                - name: nombre
+                  value: Zumo de piña 20cl
+                  description: ""
+                  disabled: false
+                - name: precio
+                  value: "0.75"
+                  description: ""
+                  disabled: false
+                - name: medida
+                  value: "\tbotella"
+                  description: ""
+                  disabled: false
+                - name: stock_optimo_invierno
+                  value: "12"
+                  description: ""
+                  disabled: false
+                - name: stock_optimo_verano
+                  value: "36"
+                  description: ""
+                  disabled: false
+                - name: categoria
+                  value: zumos
+                  description: ""
+                  disabled: false
+            headers:
+              - name: Content-Type
+                value: multipart/form-data
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1MiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1NzcyNiwiZXhwIjoxNzk1MjQ0MTI2fQ.paJqjXRP-QaQ4xqlxFYNOE-PRDC4DCyxM7Hhx545shY
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/productos
+            name: Crear Producto Sin Permiso
+            meta:
+              id: req_50c616ab5dec48e79c9d4506940fa4df
+              created: 1795157954661
+              modified: 1795157969626
+              isPrivate: false
+              description: ""
+              sortKey: -1795157840656
+            method: POST
+            body:
+              mimeType: multipart/form-data
+              params:
+                - name: nombre
+                  value: Zumo de piña 20cl
+                  description: ""
+                  disabled: false
+                - name: precio
+                  value: "0.75"
+                  description: ""
+                  disabled: false
+                - name: medida
+                  value: "\tbotella"
+                  description: ""
+                  disabled: false
+                - name: stock_optimo_invierno
+                  value: "12"
+                  description: ""
+                  disabled: false
+                - name: stock_optimo_verano
+                  value: "36"
+                  description: ""
+                  disabled: false
+                - name: categoria
+                  value: zumos
+                  description: ""
+                  disabled: false
+                - name: imagen
+                  value: ""
+                  description: ""
+                  disabled: false
+                  fileName: C:\Users\jorge\Downloads\Desafío 10 y 42 KM.png
+                  type: file
+            headers:
+              - name: Content-Type
+                value: multipart/form-data
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1NSIsImVtYWlsIjoiZW1wbGVhZG8yQHN1cHBsaS50ZXN0IiwiaWF0IjoxNzk1MTU3OTMyLCJleHAiOjE3OTUyNDQzMzJ9.mNdCeBr-qMZXpHXhwaV0dvAgiHmQzvBRK9l_g5bQamo
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
   - name: Bares
     meta:
       id: fld_28c1afe590474363946e46b21ac39ef3
@@ -940,24 +1351,20 @@ collection:
         meta:
           id: req_adb5e07efbcc43d1b93a1d36da451731
           created: 1794855066343
-          modified: 1794855071214
+          modified: 1795159353691
           isPrivate: false
           description: ""
           sortKey: -1794854580808.5
         method: GET
         body:
           mimeType: application/json
-          text: |-
-            {
-              "nombre": "Bar de Pruebas",
-              "ubicacion": "Calle Mayor 10, Alicante"
-            }
+          text: ""
         headers:
           - name: Content-Type
             value: application/json
         authentication:
           type: bearer
-          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmIzNDM0ODY2NzAyMzhiNDJmNGI0OCIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NDg0ODU3NiwiZXhwIjoxNzk0OTM0OTc2fQ.imyFwjjQ261qRSOhgiJaj-sA1JRedmdj1UEO-t7AOVQ
+          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmZmNGM2ZmE2N2I4YTRjNTZjMzU0ZiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1OTMyNCwiZXhwIjoxNzk1MjQ1NzI0fQ.e6nM3RolykfOx9FiZ16jiEhzq-eNI20ydP5PjjuhVIs
         settings:
           renderRequestBody: true
           encodeUrl: true
@@ -997,42 +1404,12 @@ collection:
             send: true
             store: true
           rebuildPath: true
-      - url: http://localhost:3000/api/bares/6afb505c51af74f2c7ca1828/empleados
-        name: Añadir Empleado
-        meta:
-          id: req_52b1b9c1eab94d1594c4e18696ec61da
-          created: 1794855195863
-          modified: 1794855291109
-          isPrivate: false
-          description: ""
-          sortKey: -1794854306320.125
-        method: POST
-        body:
-          mimeType: application/json
-          text: |-
-            {
-              "usuarioId": "6afb343486670238b42f4b4c"
-            }
-        headers:
-          - name: Content-Type
-            value: application/json
-        authentication:
-          type: bearer
-          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmIzNDM0ODY2NzAyMzhiNDJmNGI0OCIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NDg0ODU3NiwiZXhwIjoxNzk0OTM0OTc2fQ.imyFwjjQ261qRSOhgiJaj-sA1JRedmdj1UEO-t7AOVQ
-        settings:
-          renderRequestBody: true
-          encodeUrl: true
-          followRedirects: global
-          cookies:
-            send: true
-            store: true
-          rebuildPath: true
-      - url: http://localhost:3000/api/bares/6afb505c51af74f2c7ca1828/empleados
+      - url: http://localhost:3000/api/bares/6afb343586670238b42f4b50/empleados
         name: Ver empleados
         meta:
           id: req_64f9561e50ad4ef8880743b8a32de6ba
           created: 1794855390706
-          modified: 1794855555127
+          modified: 1794901792583
           isPrivate: false
           description: ""
           sortKey: -1794854260572.0625
@@ -1135,6 +1512,104 @@ collection:
             send: true
             store: true
           rebuildPath: true
+      - url: http://localhost:3000/api/bares/6afff4c7fa67b8a4c56c3557/empleados
+        name: Añadir Empleado
+        meta:
+          id: req_5ab7e3f726df434a90c536d0e8f259af
+          created: 1795158972479
+          modified: 1795159431336
+          isPrivate: false
+          description: ""
+          sortKey: -1794854329194.1562
+        method: POST
+        body:
+          mimeType: application/json
+          text: |-
+            {
+              "usuarioId": "6afff4c6fa67b8a4c56c3553"
+            }
+        headers:
+          - name: Content-Type
+            value: application/json
+        authentication:
+          type: bearer
+          token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmZmNGM2ZmE2N2I4YTRjNTZjMzU0ZiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1OTMyNCwiZXhwIjoxNzk1MjQ1NzI0fQ.e6nM3RolykfOx9FiZ16jiEhzq-eNI20ydP5PjjuhVIs
+        settings:
+          renderRequestBody: true
+          encodeUrl: true
+          followRedirects: global
+          cookies:
+            send: true
+            store: true
+          rebuildPath: true
+      - name: Bares Denegados
+        meta:
+          id: fld_852a5b405177408ebedd4968d26b3518
+          created: 1795158657326
+          modified: 1795158657326
+          sortKey: -1795158657326
+          description: ""
+        children:
+          - url: http://localhost:3000/api/bares/6afc0dc68ce8d13856e3aa5a
+            name: Cambiar nombre Bar Vacio
+            meta:
+              id: req_e04596b42d10491bb84b0a1de655af6f
+              created: 1795158648111
+              modified: 1795158774135
+              isPrivate: false
+              description: ""
+              sortKey: -1795158661063
+            method: PATCH
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmMwZGM1OGNlOGQxMzg1NmUzYWE1MiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1ODM3OCwiZXhwIjoxNzk1MjQ0Nzc4fQ.tI36tC4NUXan4bcNZ_5y8IWYq5rrlXsLwGI42SFXESA
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
+          - url: http://localhost:3000/api/bares/6afff4c7fa67b8a4c56c3557/empleados
+            name: Añadir No Empleado
+            meta:
+              id: req_07163b982be149f7934ece296b79bbba
+              created: 1795159443738
+              modified: 1795159461200
+              isPrivate: false
+              description: ""
+              sortKey: -1795158661163
+            method: POST
+            body:
+              mimeType: application/json
+              text: |-
+                {
+                  "usuarioId": "6afff4c6fa67b8a4c56c3555"
+                }
+            headers:
+              - name: Content-Type
+                value: application/json
+            authentication:
+              type: bearer
+              token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjZhZmZmNGM2ZmE2N2I4YTRjNTZjMzU0ZiIsImVtYWlsIjoiZW5jYXJnYWRvMUBzdXBwbGkudGVzdCIsImlhdCI6MTc5NTE1OTMyNCwiZXhwIjoxNzk1MjQ1NzI0fQ.e6nM3RolykfOx9FiZ16jiEhzq-eNI20ydP5PjjuhVIs
+            settings:
+              renderRequestBody: true
+              encodeUrl: true
+              followRedirects: global
+              cookies:
+                send: true
+                store: true
+              rebuildPath: true
 cookieJar:
   name: Default Jar
   meta:
