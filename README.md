@@ -60,11 +60,11 @@ backend-api/
 1. **Clona el repositorio**
 
    ```bash
-   git clone https://github.com/JorgeSanchezGallego/Suppli-TFG.git
+   git clone https://github.com/JorgeSanchezGallego/Suppli-TFG-BACKEND.git
    ```
 
    ```bash
-   cd Suppli-TFG
+   cd Suppli-TFG-BACKEND
    ```
 
 2. **Instala las dependencias**
