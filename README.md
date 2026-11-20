@@ -4,7 +4,7 @@
 
 El objetivo es quitarle al encargado el papel de cuello de botella en las compras. Cualquier trabajador autorizado del local puede ver qué proveedor suministra cada producto, consultar sus días de reparto y lanzar pedidos sin supervisión constante. Así se sustituyen las libretas, las llamadas y los mensajes sueltos de WhatsApp por un registro digital, centralizado y auditable.
 
-> **Estado actual:** este repositorio contiene **solo el backend (API REST)** y los **diagramas** del proyecto. El frontend en React se desarrollará más adelante.
+> **Estado actual:** este repositorio contiene **solo el backend (API REST)** y los **diagramas** del proyecto. El frontend en React está en desarrollo en su propio repositorio: [Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND).
 
 ---
 
@@ -196,6 +196,7 @@ URL base: `http://localhost:3000/api`
 |---|---|---|---|
 | POST | `/registro` | Público | Registra un nuevo usuario (siempre con rol `empleado`) |
 | POST | `/login` | Público | Inicia sesión y devuelve `{ user, token }` |
+| GET | `/yo` | Cualquier usuario autenticado | Devuelve los datos actualizados del usuario que ha iniciado sesión (sin contraseña, con sus bares y su empresa si es proveedor). El frontend lo usa para refrescar la sesión, por ejemplo cuando un encargado acaba de añadir al empleado a un bar |
 | GET | `/?nombre=<texto>&role=<rol>` | Encargado | Lista todos los usuarios con sus bares; filtros opcionales: `nombre` (nombre o apellidos) y `role` |
 | PATCH | `/:id/rol` | Encargado | Cambia el rol de un usuario (`{ "role": "encargado" }`; para `proveedor` hay que añadir `"proveedor": "<id_proveedor>"`) |
 
@@ -378,7 +379,9 @@ La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 
 ## Próximos pasos
 
-- [ ] Frontend en **React**: catálogo visual, carrito de compra y panel de pedidos
+- [ ] Frontend en **React** ([Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND)), en curso:
+  - [x] Landing, página "Quiénes somos", login, registro y sesión con JWT
+  - [ ] Catálogo visual, carrito de compra y panel de pedidos
 - [ ] Envío automático del pedido al proveedor por **WhatsApp** (generación de la URL de WhatsApp Web)
 - [x] Gestión de **bares** desde la API (crear, renombrar, borrar y asignar empleados)
 - [x] CRUD completo de **proveedores** desde la API
