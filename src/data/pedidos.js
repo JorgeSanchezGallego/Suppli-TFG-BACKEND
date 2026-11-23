@@ -13,7 +13,7 @@ const pedidos = [
         bar: 'Kiosko Gómiz',
         usuario: 'empleado2@suppli.test',
         proveedor: 'Cervezas La Cañada',
-        estado: 'enviado',
+        estado: 'pendiente',
         productos: [
             {producto: 'Barril de cerveza 30L', cantidad: 2},
             {producto: 'Cerveza sin alcohol 33cl', cantidad: 12}

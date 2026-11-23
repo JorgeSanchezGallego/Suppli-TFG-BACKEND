@@ -166,7 +166,7 @@ Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`]
 | **Bar** | `nombre`, `ubicacion` (no se puede modificar), `encargado` (ref. Usuario; único encargado del bar, que es quien lo crea) |
 | **Proveedor** | `nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto` |
 | **Producto** | `proveedor` (ref. Proveedor), `nombre`, `precio`, `medida`, `stock_optimo_invierno`, `stock_optimo_verano`, `categoria`, `imagen` (URL de Cloudinary) |
-| **Pedido** | `proveedor`, `bar`, `usuario`, `fecha_pedido`, `estado` (`pendiente` · `enviado` · `entregado`), `productos[]`, `total` |
+| **Pedido** | `proveedor`, `bar`, `usuario`, `fecha_pedido`, `estado` (`pendiente` · `entregado`), `productos[]`, `total` |
 
 **Pedidos inmutables:** al crear un pedido, el servidor copia el **nombre** y el **precio unitario** de cada producto en ese momento y calcula el total él mismo. Si después cambia el precio en el catálogo, el historial sigue mostrando el precio original.
 
@@ -226,7 +226,7 @@ Un usuario **proveedor** solo ve, crea, edita y borra los productos de su propia
 |---|---|---|---|
 | POST | `/` | Empleado | Crea un pedido para uno de los bares a los que pertenece el empleado (campo `bar`) |
 | GET | `/historial` | Empleado / Encargado / Proveedor | Historial de pedidos, con el bar, el proveedor y quién lo hizo: el encargado ve los de todos sus bares y el empleado los de los bares en los que trabaja (los dos pueden filtrar uno con `?bar=<id>`); el proveedor ve los que ha recibido su empresa |
-| PATCH | `/:id/estado` | Empleado / Encargado / Proveedor | Avanza el estado del pedido (`{ "estado": "enviado" }` o `{ "estado": "entregado" }`) |
+| PATCH | `/:id/estado` | Empleado / Encargado | Marca el pedido como entregado (`{ "estado": "entregado" }`) |
 
 Ejemplo de cuerpo para crear un pedido:
 
@@ -241,14 +241,9 @@ Ejemplo de cuerpo para crear un pedido:
 }
 ```
 
-**Estados del pedido.** Todo pedido se crea como `pendiente` y solo puede avanzar al siguiente estado; no se puede volver atrás ni saltarse ninguno:
+**Estados del pedido.** Todo pedido se crea como `pendiente` y solo puede pasar a `entregado` cuando llega la mercancía al local. Pueden marcarlo el **encargado del bar** o **cualquier empleado de ese bar**. Un pedido `entregado` ya no se puede modificar, y no se puede volver a `pendiente`.
 
-| Cambio | Quién puede hacerlo |
-|---|---|
-| `pendiente` → `enviado` | El proveedor al que se hizo el pedido o el encargado del bar |
-| `enviado` → `entregado` | El encargado del bar o cualquier empleado de ese bar |
-
-Un pedido `entregado` ya no se puede modificar. Si el usuario no tiene relación con el pedido (no es de su bar ni de su empresa), la API responde `404`, como si no existiera.
+Si el usuario no tiene relación con el pedido (no es de su bar), la API responde `404`, como si no existiera. Cualquier otro estado distinto de `entregado` devuelve `400`.
 
 ### Proveedores — `/api/proveedores`
 
@@ -405,7 +400,7 @@ La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 - [ ] Envío automático del pedido al proveedor por **WhatsApp** (generación de la URL de WhatsApp Web)
 - [x] Gestión de **bares** desde la API (crear, renombrar, borrar y asignar empleados)
 - [x] CRUD completo de **proveedores** desde la API
-- [x] Gestión del **estado** de los pedidos (`pendiente` → `enviado` → `entregado`)
+- [x] Gestión del **estado** de los pedidos (`pendiente` → `entregado`)
 
 ---
 

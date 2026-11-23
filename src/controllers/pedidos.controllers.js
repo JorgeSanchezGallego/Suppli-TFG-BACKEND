@@ -158,38 +158,26 @@ const verPedidos = async (req, res) => {
 };
 
 /**
- * Estado al que puede pasar un pedido desde cada estado. Un pedido `entregado`
- * no tiene siguiente estado, así que ya no se puede modificar.
- * @type {Object<string, string>}
- */
-const SIGUIENTE_ESTADO = {
-    pendiente: 'enviado',
-    enviado: 'entregado'
-};
-
-/**
- * Avanza el estado de un pedido: `pendiente` → `enviado` → `entregado`.
- * Solo se puede avanzar un paso cada vez, nunca retroceder ni saltar estados.
- * - Marcar como `enviado`: el proveedor del pedido o el encargado del bar.
- * - Marcar como `entregado`: el encargado del bar o un empleado de ese bar.
+ * Marca un pedido como entregado. Todo pedido se crea `pendiente` y solo puede pasar
+ * a `entregado`; un pedido entregado ya no se puede modificar.
+ * Pueden marcarlo el encargado del bar o cualquier empleado de ese bar.
  *
- * Si el usuario no tiene relación con el pedido (no es de su bar ni de su empresa),
- * se responde `404`, como si el pedido no existiera.
+ * Si el usuario no tiene relación con el pedido (no es de su bar), se responde `404`,
+ * como si el pedido no existiera.
  *
- * Ruta: `PATCH /api/pedidos/:id/estado` (empleados, encargados y proveedores).
+ * Ruta: `PATCH /api/pedidos/:id/estado` (empleados y encargados).
  *
  * @async
  * @param {import('express').Request} req - Petición de Express.
  * @param {Object} req.params - Parámetros de la ruta.
  * @param {string} req.params.id - ID del pedido.
  * @param {Object} req.body - Nuevo estado.
- * @param {string} req.body.estado - `enviado` o `entregado`.
+ * @param {string} req.body.estado - Siempre `entregado`.
  * @param {Object} req.user - Usuario autenticado (lo añade el middleware `isAuth`).
  * @param {import('express').Response} res - Respuesta de Express.
  * @returns {Promise<void>} `200` con el pedido actualizado; `400` si el ID o el estado
- *   no son válidos o el cambio no es el siguiente paso; `403` si el usuario está
- *   relacionado con el pedido pero no puede hacer ese cambio; `404` si el pedido no
- *   existe o no tiene relación con él.
+ *   no son válidos o el pedido ya estaba entregado; `404` si el pedido no existe o no
+ *   es de un bar del usuario.
  */
 const cambiarEstadoPedido = async (req, res) => {
     try {
@@ -199,8 +187,8 @@ const cambiarEstadoPedido = async (req, res) => {
         if (!mongoose.Types.ObjectId.isValid(id)) {
             return res.status(400).json({error: "ID de pedido no válido"});
         }
-        if (!['enviado', 'entregado'].includes(estado)) {
-            return res.status(400).json({error: "Estado no válido. Estados posibles: enviado, entregado"});
+        if (estado !== 'entregado') {
+            return res.status(400).json({error: "Estado no válido. Un pedido solo puede marcarse como entregado"});
         }
 
         const pedido = await Pedido.findById(id);
@@ -211,29 +199,13 @@ const cambiarEstadoPedido = async (req, res) => {
         const bar = await Bar.findById(pedido.bar).select('encargado');
         const esEncargadoDelBar = req.user.role === 'encargado' && bar && bar.encargado.equals(req.user._id);
         const esEmpleadoDelBar = req.user.role === 'empleado' && req.user.bares.some((barId) => barId.equals(pedido.bar));
-        const esProveedorDelPedido = req.user.role === 'proveedor' && req.user.proveedor && req.user.proveedor.equals(pedido.proveedor);
 
-        if (!esEncargadoDelBar && !esEmpleadoDelBar && !esProveedorDelPedido) {
+        if (!esEncargadoDelBar && !esEmpleadoDelBar) {
             return res.status(404).json({error: "Pedido no encontrado"});
         }
 
-        if (SIGUIENTE_ESTADO[pedido.estado] !== estado) {
-            return res.status(400).json({
-                error: pedido.estado === 'entregado'
-                    ? "El pedido ya está entregado y no se puede modificar"
-                    : `Un pedido ${pedido.estado} solo puede pasar a ${SIGUIENTE_ESTADO[pedido.estado]}`
-            });
-        }
-
-        const puedeCambiar = estado === 'enviado'
-            ? esProveedorDelPedido || esEncargadoDelBar
-            : esEncargadoDelBar || esEmpleadoDelBar;
-        if (!puedeCambiar) {
-            return res.status(403).json({
-                error: estado === 'enviado'
-                    ? "Solo el proveedor del pedido o el encargado del bar pueden marcarlo como enviado"
-                    : "Solo el encargado o los empleados del bar pueden marcarlo como entregado"
-            });
+        if (pedido.estado === 'entregado') {
+            return res.status(400).json({error: "El pedido ya está entregado y no se puede modificar"});
         }
 
         pedido.estado = estado;
