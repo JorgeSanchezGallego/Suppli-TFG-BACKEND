@@ -91,22 +91,25 @@ const crearPedido = async (req, res) => {
 /**
  * Devuelve el historial de pedidos según el rol del usuario.
  * - Encargado: los pedidos de todos sus bares, o los de uno solo con `?bar=<id>`.
+ * - Empleado: los pedidos de los bares en los que trabaja (hechos por él o por sus
+ *   compañeros), o los de uno solo con `?bar=<id>`.
  * - Proveedor: los pedidos hechos a su empresa, de cualquier bar.
  *
- * Los pedidos se devuelven del más reciente al más antiguo, con el bar, el usuario
- * que lo hizo y los datos de cada producto.
+ * Los pedidos se devuelven del más reciente al más antiguo, con el bar, el proveedor,
+ * el usuario que lo hizo y los datos de cada producto.
  *
- * Ruta: `GET /api/pedidos/historial` (encargados y proveedores).
+ * Ruta: `GET /api/pedidos/historial` (empleados, encargados y proveedores).
  *
  * @async
  * @param {import('express').Request} req - Petición de Express.
  * @param {Object} req.query - Filtros opcionales.
- * @param {string} [req.query.bar] - ID de uno de los bares del encargado (el proveedor lo ignora).
+ * @param {string} [req.query.bar] - ID de uno de los bares del encargado o del empleado
+ *   (el proveedor lo ignora).
  * @param {Object} req.user - Usuario autenticado (lo añade el middleware `isAuth`).
  * @param {import('express').Response} res - Respuesta de Express.
  * @returns {Promise<void>} `200` con la lista de pedidos (puede estar vacía);
  *   `400` si el proveedor no está vinculado a ninguna empresa;
- *   `403` si el bar indicado no es del encargado.
+ *   `403` si el bar indicado no es del encargado o el empleado no trabaja en él.
  */
 const verPedidos = async (req, res) => {
     try {
@@ -123,6 +126,16 @@ const verPedidos = async (req, res) => {
             } else {
                 filtro = {bar: {$in: idsBares}};
             }
+        } else if (req.user.role === 'empleado') {
+            const {bar} = req.query;
+            if (bar) {
+                if (!mongoose.Types.ObjectId.isValid(bar) || !req.user.bares.some((id) => id.equals(bar))) {
+                    return res.status(403).json({error: "No perteneces a ese bar"});
+                }
+                filtro = {bar};
+            } else {
+                filtro = {bar: {$in: req.user.bares}};
+            }
         } else if (req.user.role === 'proveedor') {
             if (!req.user.proveedor) {
                 return res.status(400).json({error: "El usuario no está vinculado a ningún proveedor"});
@@ -136,6 +149,7 @@ const verPedidos = async (req, res) => {
             .populate('productos.producto')
             .populate('usuario', 'nombre apellidos')
             .populate('bar', 'nombre ubicacion')
+            .populate('proveedor', 'nombre_empresa')
             .sort({createdAt: -1});
         return res.status(200).json(pedidos);
     } catch (error) {
@@ -226,7 +240,8 @@ const cambiarEstadoPedido = async (req, res) => {
         const actualizado = await pedido.save();
         await actualizado.populate([
             {path: 'bar', select: 'nombre ubicacion'},
-            {path: 'usuario', select: 'nombre apellidos'}
+            {path: 'usuario', select: 'nombre apellidos'},
+            {path: 'proveedor', select: 'nombre_empresa'}
         ]);
         res.status(200).json(actualizado);
     } catch (error) {

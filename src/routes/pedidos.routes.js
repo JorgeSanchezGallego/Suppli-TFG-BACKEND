@@ -6,7 +6,7 @@ const router = express.Router();
 
 router.post('/', [isAuth, permitirRoles('empleado')], crearPedido);
 
-router.get('/historial', [isAuth, permitirRoles('encargado', 'proveedor')], verPedidos);
+router.get('/historial', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], verPedidos);
 
 router.patch('/:id/estado', [isAuth, permitirRoles('empleado', 'encargado', 'proveedor')], cambiarEstadoPedido);
 

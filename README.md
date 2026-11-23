@@ -225,7 +225,7 @@ Un usuario **proveedor** solo ve, crea, edita y borra los productos de su propia
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
 | POST | `/` | Empleado | Crea un pedido para uno de los bares a los que pertenece el empleado (campo `bar`) |
-| GET | `/historial` | Encargado / Proveedor | Historial de pedidos: el encargado ve los de todos sus bares (o los de uno con `?bar=<id>`) y el proveedor los que ha recibido su empresa |
+| GET | `/historial` | Empleado / Encargado / Proveedor | Historial de pedidos, con el bar, el proveedor y quién lo hizo: el encargado ve los de todos sus bares y el empleado los de los bares en los que trabaja (los dos pueden filtrar uno con `?bar=<id>`); el proveedor ve los que ha recibido su empresa |
 | PATCH | `/:id/estado` | Empleado / Encargado / Proveedor | Avanza el estado del pedido (`{ "estado": "enviado" }` o `{ "estado": "entregado" }`) |
 
 Ejemplo de cuerpo para crear un pedido:
