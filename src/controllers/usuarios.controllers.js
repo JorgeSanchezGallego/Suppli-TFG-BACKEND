@@ -108,7 +108,8 @@ const verUsuarioActual = async (req, res) => {
  * Lista los usuarios, con filtros opcionales por nombre y por rol.
  * El filtro `nombre` busca el texto en el nombre y en los apellidos, sin distinguir
  * mayúsculas. Cada usuario se devuelve sin contraseña, con sus bares (nombre y
- * ubicación) y, si es proveedor, con el nombre de su empresa.
+ * ubicación) y, si es proveedor, con el nombre de su empresa. A los encargados se les
+ * añade `baresGestionados`: los bares de los que son encargados (nombre y ubicación).
  *
  * Ruta: `GET /api/usuarios` (solo encargados).
  *
@@ -139,7 +140,20 @@ const buscarUsuarios = async (req, res) => {
             .select('-contraseña')
             .populate('bares', 'nombre ubicacion')
             .populate('proveedor', 'nombre_empresa')
-            .sort({nombre: 1, apellidos: 1});
+            .sort({nombre: 1, apellidos: 1})
+            .lean();
+
+        const idsEncargados = usuarios.filter((u) => u.role === 'encargado').map((u) => u._id);
+        const baresGestionados = idsEncargados.length > 0
+            ? await Bar.find({encargados: {$in: idsEncargados}}).select('nombre ubicacion encargados').lean()
+            : [];
+        for (const usuario of usuarios) {
+            if (usuario.role === 'encargado') {
+                usuario.baresGestionados = baresGestionados
+                    .filter((bar) => bar.encargados.some((id) => id.equals(usuario._id)))
+                    .map(({_id, nombre: nombreBar, ubicacion}) => ({_id, nombre: nombreBar, ubicacion}));
+            }
+        }
         res.status(200).json(usuarios);
     } catch (error) {
         res.status(400).json({error: "error al buscar usuarios", details: error.message});
@@ -189,10 +203,11 @@ const cambiarRol = async (req, res) => {
             return res.status(404).json({error: "Usuario no encontrado"});
         }
 
-        if (usuario.role === 'encargado' && role !== 'encargado') {
-            const numBares = await Bar.countDocuments({encargado: usuario._id});
-            if (numBares > 0) {
-                return res.status(400).json({error: `Este encargado tiene ${numBares} bar(es); hay que borrarlos antes de cambiarle el rol`});
+        const dejaDeSerEncargado = usuario.role === 'encargado' && role !== 'encargado';
+        if (dejaDeSerEncargado) {
+            const numBaresSoloSuyos = await Bar.countDocuments({encargados: {$size: 1, $all: [usuario._id]}});
+            if (numBaresSoloSuyos > 0) {
+                return res.status(400).json({error: `Este encargado es el único responsable de ${numBaresSoloSuyos} bar(es); hay que añadir otro encargado o borrarlos antes de cambiarle el rol`});
             }
         }
 
@@ -210,6 +225,10 @@ const cambiarRol = async (req, res) => {
 
         if (role !== 'empleado') {
             usuario.bares = [];
+        }
+
+        if (dejaDeSerEncargado) {
+            await Bar.updateMany({encargados: usuario._id}, {$pull: {encargados: usuario._id}});
         }
 
         usuario.role = role;

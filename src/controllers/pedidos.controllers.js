@@ -115,7 +115,7 @@ const verPedidos = async (req, res) => {
     try {
         let filtro;
         if (req.user.role === 'encargado') {
-            const misBares = await Bar.find({encargado: req.user._id}).select('_id');
+            const misBares = await Bar.find({encargados: req.user._id}).select('_id');
             const idsBares = misBares.map((b) => b._id);
             const {bar} = req.query;
             if (bar) {
@@ -160,7 +160,7 @@ const verPedidos = async (req, res) => {
 /**
  * Marca un pedido como entregado. Todo pedido se crea `pendiente` y solo puede pasar
  * a `entregado`; un pedido entregado ya no se puede modificar.
- * Pueden marcarlo el encargado del bar o cualquier empleado de ese bar.
+ * Pueden marcarlo los encargados del bar o cualquier empleado de ese bar.
  *
  * Si el usuario no tiene relación con el pedido (no es de su bar), se responde `404`,
  * como si el pedido no existiera.
@@ -196,8 +196,8 @@ const cambiarEstadoPedido = async (req, res) => {
             return res.status(404).json({error: "Pedido no encontrado"});
         }
 
-        const bar = await Bar.findById(pedido.bar).select('encargado');
-        const esEncargadoDelBar = req.user.role === 'encargado' && bar && bar.encargado.equals(req.user._id);
+        const bar = await Bar.findById(pedido.bar).select('encargados');
+        const esEncargadoDelBar = req.user.role === 'encargado' && bar && bar.encargados.some((encargadoId) => encargadoId.equals(req.user._id));
         const esEmpleadoDelBar = req.user.role === 'empleado' && req.user.bares.some((barId) => barId.equals(pedido.bar));
 
         if (!esEncargadoDelBar && !esEmpleadoDelBar) {

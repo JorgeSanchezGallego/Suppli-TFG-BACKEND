@@ -48,7 +48,7 @@ const sembrar = async () => {
 
     const bares = await Bar.insertMany(baresData.map((bar) => ({
         ...bar,
-        encargado: buscar(usuarioPorCorreo, bar.encargado, 'Usuario')._id
+        encargados: bar.encargados.map((correo) => buscar(usuarioPorCorreo, correo, 'Usuario')._id)
     })));
     const barPorNombre = new Map(bares.map((b) => [b.nombre, b]));
     console.log(`${bares.length} bares creados`);

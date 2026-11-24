@@ -17,7 +17,7 @@ El objetivo es quitarle al encargado el papel de cuello de botella en las compra
 | Base de datos | MongoDB + Mongoose |
 | Autenticación | JSON Web Tokens (`jsonwebtoken`) |
 | Cifrado de contraseñas | `bcrypt` |
-| Subida de imágenes | Multer + Cloudinary (`multer-storage-cloudinary`) |
+| Subida de imágenes | Multer + Cloudinary (`multer-storage-cloudinary`): fotos de productos (carpeta `productos`) y de bares (carpeta `bares`) |
 | Otros | `cors`, `dotenv`, `nodemon` (desarrollo) |
 
 El proyecto completo sigue la arquitectura **MERN** (MongoDB, Express, React, Node.js).
@@ -141,12 +141,14 @@ npm run seed
 
 > ⚠️ El seed **vacía** las colecciones de usuarios, bares, proveedores, productos y pedidos de la base de datos indicada en `DB_URL` antes de insertar los datos de prueba. No lo ejecutes contra una base de datos con datos reales.
 
+> Si tienes una base de datos creada antes de que los bares admitieran varios encargados (campo `encargado` en lugar de `encargados`), puedes convertirla sin perder datos con `npm run migrar:encargados` ([`src/seeds/migrarEncargados.js`](src/seeds/migrarEncargados.js)).
+
 Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`](src/seeds/seed.js). Se crean 3 proveedores, 3 bares, 10 productos, 4 pedidos y estos usuarios, todos con la contraseña `Prueba1234`:
 
 | Correo | Rol | Detalle |
 |---|---|---|
-| `encargado1@suppli.test` | Encargado | Encargado de *Kiosko Gómiz* y *Noray* |
-| `encargado2@suppli.test` | Encargado | Encargado de *Soho Parc* |
+| `encargado1@suppli.test` | Encargado | Encargado de *Kiosko Gómiz* y *Noray* (este último, compartido) |
+| `encargado2@suppli.test` | Encargado | Encargado de *Soho Parc* y *Noray* (compartido con `encargado1`) |
 | `empleado1@suppli.test` | Empleado | Trabaja en *Kiosko Gómiz* y *Noray* |
 | `empleado2@suppli.test` | Empleado | Trabaja en *Kiosko Gómiz* |
 | `empleado3@suppli.test` | Empleado | Trabaja en *Soho Parc* |
@@ -163,7 +165,7 @@ Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`]
 | Modelo | Campos principales |
 |---|---|
 | **Usuario** | `nombre`, `apellidos`, `bares` (lista de ref. Bar; bares en los que trabaja un empleado, los asigna el encargado), `proveedor` (ref. Proveedor; obligatorio solo para el rol `proveedor`), `fechaNacimiento`, `residencia`, `correo` (único), `contraseña` (hash bcrypt, mín. 8 caracteres), `telefono`, `role` (`encargado` · `empleado` · `proveedor`) |
-| **Bar** | `nombre`, `ubicacion` (no se puede modificar), `encargado` (ref. Usuario; único encargado del bar, que es quien lo crea) |
+| **Bar** | `nombre`, `ubicacion` (no se puede modificar), `encargados` (lista de ref. Usuario; al menos uno; quien crea el bar es el primero y puede añadir a otros encargados), `imagen` (URL de Cloudinary, opcional) |
 | **Proveedor** | `nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto` |
 | **Producto** | `proveedor` (ref. Proveedor), `nombre`, `precio`, `medida`, `stock_optimo_invierno`, `stock_optimo_verano`, `categoria`, `imagen` (URL de Cloudinary) |
 | **Pedido** | `proveedor`, `bar`, `usuario`, `fecha_pedido`, `estado` (`pendiente` · `entregado`), `productos[]`, `total` |
@@ -197,12 +199,12 @@ URL base: `http://localhost:3000/api`
 | POST | `/registro` | Público | Registra un nuevo usuario (siempre con rol `empleado`) |
 | POST | `/login` | Público | Inicia sesión y devuelve `{ user, token }` |
 | GET | `/yo` | Cualquier usuario autenticado | Devuelve los datos actualizados del usuario que ha iniciado sesión (sin contraseña, con sus bares y su empresa si es proveedor). El frontend lo usa para refrescar la sesión, por ejemplo cuando un encargado acaba de añadir al empleado a un bar |
-| GET | `/?nombre=<texto>&role=<rol>` | Encargado | Lista todos los usuarios con sus bares; filtros opcionales: `nombre` (nombre o apellidos) y `role` |
+| GET | `/?nombre=<texto>&role=<rol>` | Encargado | Lista todos los usuarios con sus bares (y, en los encargados, `baresGestionados`: los bares de los que son encargados); filtros opcionales: `nombre` (nombre o apellidos) y `role` |
 | PATCH | `/:id/rol` | Encargado | Cambia el rol de un usuario (`{ "role": "encargado" }`; para `proveedor` hay que añadir `"proveedor": "<id_proveedor>"`) |
 
 Reglas al cambiar el rol:
 - Un encargado no puede cambiar su propio rol.
-- Un encargado que todavía tiene bares no puede dejar de ser encargado (habría que borrar antes sus bares).
+- Un encargado que es el **único** encargado de algún bar no puede dejar de ser encargado (habría que añadir otro encargado o borrar el bar). Si solo comparte bares con otros encargados, deja de ser encargado de ellos.
 - Al pasar a `encargado` o `proveedor`, el usuario deja de pertenecer a los bares en los que trabajaba como empleado.
 - Al dejar de ser `proveedor`, se desvincula de su empresa proveedora.
 
@@ -261,16 +263,18 @@ Los proveedores son comunes a todos los bares.
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/` | Encargado | Crea un bar (`nombre`, `ubicacion`); el encargado queda como su responsable |
-| GET | `/` | Encargado | Lista los bares del encargado |
-| PATCH | `/:id` | Encargado del bar | Cambia el nombre del bar (la ubicación no se puede modificar) |
-| DELETE | `/:id` | Encargado del bar | Borra el bar y sus pedidos, y lo quita de sus empleados |
+| POST | `/` | Encargado | Crea un bar (`nombre`, `ubicacion` y, opcionalmente, una foto en el campo `imagen` con `multipart/form-data`); quien lo crea queda como su primer encargado |
+| GET | `/` | Encargado | Lista los bares en los que el usuario es uno de los encargados, con los datos de todos sus encargados |
+| PATCH | `/:id` | Encargado del bar | Cambia el nombre del bar, su foto (`imagen`, la anterior se borra de Cloudinary) o las dos cosas; la ubicación no se puede modificar |
+| DELETE | `/:id` | Encargado del bar | Borra el bar, sus pedidos y su foto de Cloudinary, y lo quita de sus empleados |
 | GET | `/:id/pedidos` | Encargado del bar | Pedidos de un bar |
 | GET | `/:id/empleados` | Encargado del bar | Empleados de un bar |
 | POST | `/:id/empleados` | Encargado del bar | Añade un empleado al bar (`{ "usuarioId": "<id>" }`) |
 | DELETE | `/:id/empleados/:usuarioId` | Encargado del bar | Quita un empleado del bar |
+| POST | `/:id/encargados` | Encargado del bar | Añade otro encargado al bar (`{ "usuarioId": "<id>" }`; tiene que tener rol `encargado`) |
+| DELETE | `/:id/encargados/:usuarioId` | Encargado del bar | Quita a un encargado del bar, también a uno mismo para dejar de gestionarlo. Un bar no puede quedarse sin encargados |
 
-Todas las rutas con `/:id` comprueban que el bar pertenece al encargado autenticado; si no, devuelven `403`.
+**Varios encargados por bar.** Un bar puede tener varios encargados (por ejemplo, uno de mañana y otro de tarde) y todos tienen los mismos permisos sobre él: empleados, nombre, foto, pedidos y borrarlo. Todas las rutas con `/:id` comprueban que el usuario autenticado es uno de los encargados del bar; si no, devuelven `403`.
 
 Cualquier ruta que no exista devuelve `404 { "error": "Route not found" }`.
 

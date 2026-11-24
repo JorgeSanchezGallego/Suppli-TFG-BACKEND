@@ -12,11 +12,19 @@ const barSchema = new mongoose.Schema({
         trim: true,
         immutable: true
     },
-    encargado: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Usuario',
-        required: true,
-        immutable: true
+    encargados: {
+        type: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Usuario'
+        }],
+        validate: {
+            validator: (lista) => Array.isArray(lista) && lista.length > 0,
+            message: 'Un bar tiene que tener al menos un encargado'
+        }
+    },
+    imagen: {
+        type: String,
+        trim: true
     }
 },
 
