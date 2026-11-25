@@ -108,7 +108,8 @@ const crearProveedor = async (req, res) => {
 
 /**
  * Lista los proveedores ordenados por nombre de empresa, con un filtro opcional por
- * nombre (sin distinguir mayúsculas).
+ * nombre (sin distinguir mayúsculas). Un usuario proveedor solo obtiene su propia
+ * empresa (o una lista vacía si no está vinculado a ninguna).
  *
  * Ruta: `GET /api/proveedores` (cualquier usuario autenticado).
  *
@@ -122,6 +123,12 @@ const crearProveedor = async (req, res) => {
 const verProveedores = async (req, res) => {
     try {
         const filtro = {};
+        if (req.user.role === 'proveedor') {
+            if (!req.user.proveedor) {
+                return res.status(200).json([]);
+            }
+            filtro._id = req.user.proveedor;
+        }
         const {nombre} = req.query;
         if (typeof nombre === 'string' && nombre.trim() !== '') {
             filtro.nombre_empresa = regexBusqueda(nombre);
@@ -219,8 +226,31 @@ const borrarProveedor = async (req, res) => {
     }
 };
 
+/**
+ * Middleware que comprueba que el usuario puede ver el proveedor cargado en
+ * `req.proveedor`: empleados y encargados ven cualquiera; un usuario proveedor solo
+ * el de su propia empresa. Se usa después de `cargarProveedor`.
+ *
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {Object} req.user - Usuario autenticado.
+ * @param {Object} req.proveedor - Proveedor cargado por `cargarProveedor`.
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @param {import('express').NextFunction} next - Siguiente middleware.
+ * @returns {void} Llama a `next()` si puede verlo; si no, responde `403`.
+ */
+const puedeVerProveedor = (req, res, next) => {
+    if (req.user.role !== 'proveedor') {
+        return next();
+    }
+    if (req.user.proveedor && req.user.proveedor.equals(req.proveedor._id)) {
+        return next();
+    }
+    return res.status(403).json({error: "Solo puedes ver los datos de tu propia empresa"});
+};
+
 module.exports = {
     cargarProveedor,
+    puedeVerProveedor,
     puedeEditarProveedor,
     crearProveedor,
     verProveedores,

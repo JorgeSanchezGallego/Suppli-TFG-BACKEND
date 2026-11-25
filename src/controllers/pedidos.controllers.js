@@ -5,13 +5,14 @@ const Bar = require('../models/bar.model');
 const Proveedor = require('../models/proveedor.model');
 
 /**
- * Crea un pedido de un empleado para uno de sus bares.
- * Comprueba que el empleado pertenece al bar, que el proveedor existe y que todos los
+ * Crea un pedido de un empleado o de un encargado para uno de sus bares.
+ * Comprueba que el usuario pertenece al bar (como empleado) o es uno de sus
+ * encargados, que el proveedor existe y que todos los
  * productos son de ese proveedor. El nombre y el precio de cada producto se copian
  * desde la base de datos (no se fían del cliente) y el total lo calcula el servidor,
  * así el pedido conserva el precio que tenía en el momento de hacerlo.
  *
- * Ruta: `POST /api/pedidos` (solo empleados).
+ * Ruta: `POST /api/pedidos` (empleados y encargados).
  *
  * @async
  * @param {import('express').Request} req - Petición de Express.
@@ -19,11 +20,11 @@ const Proveedor = require('../models/proveedor.model');
  * @param {string} req.body.bar - ID del bar para el que se hace el pedido.
  * @param {string} req.body.proveedor - ID del proveedor al que se hace el pedido.
  * @param {{producto: string, cantidad: number}[]} req.body.productos - Productos y cantidades (mínimo 1 de cada).
- * @param {Object} req.user - Empleado autenticado (lo añade el middleware `isAuth`).
+ * @param {Object} req.user - Empleado o encargado autenticado (lo añade el middleware `isAuth`).
  * @param {import('express').Response} res - Respuesta de Express.
  * @returns {Promise<void>} `201` con el pedido creado en estado `pendiente`;
  *   `400` si faltan datos, algún ID o cantidad no es válido, un producto no existe
- *   o no es del proveedor; `403` si el empleado no pertenece al bar;
+ *   o no es del proveedor; `403` si el usuario no pertenece al bar ni es su encargado;
  *   `404` si el proveedor no existe.
  */
 const crearPedido = async (req, res) => {
@@ -42,7 +43,10 @@ const crearPedido = async (req, res) => {
             return res.status(400).json({error: "El campo bar es obligatorio y debe ser un ID válido"});
         }
 
-        if (!req.user.bares.some((barId) => barId.equals(bar))) {
+        const esDelBar = req.user.role === 'encargado'
+            ? await Bar.exists({_id: bar, encargados: req.user._id})
+            : req.user.bares.some((barId) => barId.equals(bar));
+        if (!esDelBar) {
             return res.status(403).json({error: "No perteneces a ese bar"});
         }
 
@@ -221,4 +225,58 @@ const cambiarEstadoPedido = async (req, res) => {
     }
 };
 
-module.exports = {crearPedido, verPedidos, cambiarEstadoPedido};
+/**
+ * Borra un pedido, por ejemplo si se guardó por error.
+ * - El encargado del bar puede borrar cualquier pedido de sus bares, esté como esté.
+ * - El empleado que hizo el pedido puede borrarlo solo mientras siga `pendiente`.
+ * - Los proveedores no pueden borrar pedidos.
+ *
+ * Ruta: `DELETE /api/pedidos/:id` (empleados y encargados).
+ *
+ * @async
+ * @param {import('express').Request} req - Petición de Express.
+ * @param {string} req.params.id - ID del pedido a borrar.
+ * @param {Object} req.user - Usuario autenticado (lo añade el middleware `isAuth`).
+ * @param {import('express').Response} res - Respuesta de Express.
+ * @returns {Promise<void>} `200` con el pedido borrado; `400` si el ID no es válido;
+ *   `403` si es un empleado que no hizo el pedido o el pedido ya está entregado;
+ *   `404` si el pedido no existe o no es de uno de los bares del usuario.
+ */
+const borrarPedido = async (req, res) => {
+    try {
+        const {id} = req.params;
+        if (!mongoose.Types.ObjectId.isValid(id)) {
+            return res.status(400).json({error: "ID de pedido no válido"});
+        }
+
+        const pedido = await Pedido.findById(id);
+        if (!pedido) {
+            return res.status(404).json({error: "Pedido no encontrado"});
+        }
+
+        if (req.user.role === 'encargado') {
+            const esEncargadoDelBar = await Bar.exists({_id: pedido.bar, encargados: req.user._id});
+            if (!esEncargadoDelBar) {
+                return res.status(404).json({error: "Pedido no encontrado"});
+            }
+        } else {
+            const esEmpleadoDelBar = req.user.bares.some((barId) => barId.equals(pedido.bar));
+            if (!esEmpleadoDelBar) {
+                return res.status(404).json({error: "Pedido no encontrado"});
+            }
+            if (!pedido.usuario.equals(req.user._id)) {
+                return res.status(403).json({error: "Solo puedes borrar los pedidos que has hecho tú"});
+            }
+            if (pedido.estado !== 'pendiente') {
+                return res.status(403).json({error: "El pedido ya está entregado; solo el encargado puede borrarlo"});
+            }
+        }
+
+        await pedido.deleteOne();
+        res.status(200).json({message: "Pedido borrado con éxito", pedido});
+    } catch (error) {
+        res.status(400).json({error: "error al borrar el pedido", details: error.message});
+    }
+};
+
+module.exports = {crearPedido, verPedidos, cambiarEstadoPedido, borrarPedido};

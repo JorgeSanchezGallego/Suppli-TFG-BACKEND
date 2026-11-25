@@ -84,6 +84,8 @@ const loginUsuario = async (req, res) => {
  * Sirve para que el frontend refresque la sesión, por ejemplo cuando un encargado
  * acaba de añadir al empleado a un bar. Se devuelve sin contraseña, con sus bares
  * (nombre y ubicación) y, si es proveedor, con el nombre de su empresa.
+ * A un encargado se le añade `baresGestionados`: los bares de los que es encargado
+ * (nombre y ubicación), que son para los que puede hacer pedidos.
  *
  * Ruta: `GET /api/usuarios/yo` (cualquier usuario autenticado).
  *
@@ -97,7 +99,14 @@ const verUsuarioActual = async (req, res) => {
         const usuario = await Usuario.findById(req.user._id)
             .select('-contraseña')
             .populate('bares', 'nombre ubicacion')
-            .populate('proveedor', 'nombre_empresa');
+            .populate('proveedor', 'nombre_empresa')
+            .lean();
+        if (usuario && usuario.role === 'encargado') {
+            usuario.baresGestionados = await Bar.find({encargados: usuario._id})
+                .select('nombre ubicacion')
+                .sort({nombre: 1})
+                .lean();
+        }
         res.status(200).json(usuario);
     } catch (error) {
         res.status(400).json({error: "error al obtener el usuario", details: error.message});

@@ -198,7 +198,7 @@ URL base: `http://localhost:3000/api`
 |---|---|---|---|
 | POST | `/registro` | Público | Registra un nuevo usuario (siempre con rol `empleado`) |
 | POST | `/login` | Público | Inicia sesión y devuelve `{ user, token }` |
-| GET | `/yo` | Cualquier usuario autenticado | Devuelve los datos actualizados del usuario que ha iniciado sesión (sin contraseña, con sus bares y su empresa si es proveedor). El frontend lo usa para refrescar la sesión, por ejemplo cuando un encargado acaba de añadir al empleado a un bar |
+| GET | `/yo` | Cualquier usuario autenticado | Devuelve los datos actualizados del usuario que ha iniciado sesión (sin contraseña, con sus bares, su empresa si es proveedor y, si es encargado, `baresGestionados` con los bares que gestiona). El frontend lo usa para refrescar la sesión, por ejemplo cuando un encargado acaba de añadir al empleado a un bar |
 | GET | `/?nombre=<texto>&role=<rol>` | Encargado | Lista todos los usuarios con sus bares (y, en los encargados, `baresGestionados`: los bares de los que son encargados); filtros opcionales: `nombre` (nombre o apellidos) y `role` |
 | PATCH | `/:id/rol` | Encargado | Cambia el rol de un usuario (`{ "role": "encargado" }`; para `proveedor` hay que añadir `"proveedor": "<id_proveedor>"`) |
 
@@ -226,9 +226,10 @@ Un usuario **proveedor** solo ve, crea, edita y borra los productos de su propia
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| POST | `/` | Empleado | Crea un pedido para uno de los bares a los que pertenece el empleado (campo `bar`) |
+| POST | `/` | Empleado / Encargado | Crea un pedido para uno de los bares del usuario (campo `bar`): el empleado, para los bares en los que trabaja; el encargado, para los que gestiona |
 | GET | `/historial` | Empleado / Encargado / Proveedor | Historial de pedidos, con el bar, el proveedor y quién lo hizo: el encargado ve los de todos sus bares y el empleado los de los bares en los que trabaja (los dos pueden filtrar uno con `?bar=<id>`); el proveedor ve los que ha recibido su empresa |
 | PATCH | `/:id/estado` | Empleado / Encargado | Marca el pedido como entregado (`{ "estado": "entregado" }`) |
+| DELETE | `/:id` | Empleado / Encargado | Borra un pedido: el encargado, cualquiera de sus bares; el empleado, solo los que ha hecho él y mientras sigan pendientes |
 
 Ejemplo de cuerpo para crear un pedido:
 
@@ -253,8 +254,8 @@ Los proveedores son comunes a todos los bares.
 
 | Método | Ruta | Acceso | Descripción |
 |---|---|---|---|
-| GET | `/?nombre=<texto>` | Cualquier usuario autenticado | Lista los proveedores; `nombre` (opcional) filtra por nombre de empresa |
-| GET | `/:id` | Cualquier usuario autenticado | Ver un proveedor |
+| GET | `/?nombre=<texto>` | Cualquier usuario autenticado | Lista los proveedores; `nombre` (opcional) filtra por nombre de empresa. Un proveedor solo recibe su propia empresa |
+| GET | `/:id` | Cualquier usuario autenticado | Ver un proveedor (un proveedor solo puede ver su propia empresa) |
 | POST | `/` | Encargado | Crea un proveedor (`nombre_empresa`, `nombre_persona`, `telefono`, `dias_reparto`) |
 | PATCH | `/:id` | Encargado / Proveedor de esa empresa | Edita los datos del proveedor; un usuario proveedor solo puede editar el suyo |
 | DELETE | `/:id` | Encargado | Borra el proveedor en cascada: sus productos y sus pedidos se eliminan, y sus usuarios pasan a ser empleados |
