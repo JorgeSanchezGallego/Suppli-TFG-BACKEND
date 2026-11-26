@@ -15,8 +15,10 @@ const usuarios = [
     {...base, nombre: 'Elena', apellidos: 'Navarro Torres', correo: 'empleado3@suppli.test', telefono: '600000005', role: 'empleado', bares: ['Soho Parc']},
     {...base, nombre: 'Pablo', apellidos: 'Jiménez Ortega', correo: 'empleado4@suppli.test', telefono: '600000006', role: 'empleado', bares: []},
 
-    {...base, nombre: 'Antonio', apellidos: 'Ruiz Castro', correo: 'proveedor1@suppli.test', telefono: '611223344', role: 'proveedor', proveedor: 'Bebidas del Sur'},
-    {...base, nombre: 'Marta', apellidos: 'Gil Herrera', correo: 'proveedor2@suppli.test', telefono: '622334455', role: 'proveedor', proveedor: 'Cervezas La Cañada'}
+    {...base, nombre: 'Alex', apellidos: 'Cafés Tavira', correo: 'proveedor1@suppli.test', telefono: '611000001', role: 'proveedor', proveedor: 'Cafés Tavira'},
+    {...base, nombre: 'Manolo', apellidos: 'Tajuelo', correo: 'proveedor2@suppli.test', telefono: '611000002', role: 'proveedor', proveedor: 'Exclusivas Ramírez'},
+    {...base, nombre: 'Esther', apellidos: 'Comercial Tabarca', correo: 'proveedor3@suppli.test', telefono: '611000003', role: 'proveedor', proveedor: 'Comercial Tabarca'},
+    {...base, nombre: 'Jony', apellidos: 'Distribuciones Guillén', correo: 'proveedor4@suppli.test', telefono: '611000004', role: 'proveedor', proveedor: 'Distribuciones Guillén'}
 ];
 
 module.exports = {usuarios, CONTRASEÑA};
