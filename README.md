@@ -411,11 +411,13 @@ Estas pruebas comprueban que la API rechaza las peticiones incorrectas con el c�
 
 La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 
-- [Diagrama de clases](Diagramas/DiagramaDeClasesV2.png)
-- [Diagrama de casos de uso](Diagramas/DiagramaDeCasosDeUsoV2.png)
-- [Diagrama de estados](Diagramas/DiagramaDeEstadosV2.png)
-- [Diagrama de secuencia](Diagramas/DiagramaDeSecuenciaV2.png)
-- [Diagrama de Gantt](Diagramas/DiagramaGanttV2.png)
+- [Diagrama de clases](Diagramas/DiagramaDeClasesV3.png)
+- [Diagrama de casos de uso](Diagramas/DiagramaDeCasosDeUsoV3.png)
+- [Diagrama de estados](Diagramas/DiagramaDeEstadosV3.png)
+- [Diagrama de secuencia](Diagramas/DiagramaDeSecuenciaV3.png)
+- [Diagrama de Gantt](Diagramas/DiagramaGanttV3.png)
+
+Son la versión 3, actualizada con el estado final del proyecto: varios encargados por bar, pedidos de encargados, borrado de pedidos, estados `pendiente` → `entregado` y envío por WhatsApp. El Gantt mantiene las fechas de la planificación del anteproyecto y marca qué fases están terminadas. Las versiones anteriores están en el historial de Git.
 
 ---
 
