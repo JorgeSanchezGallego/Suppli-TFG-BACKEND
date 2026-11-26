@@ -4,7 +4,7 @@
 
 El objetivo es quitarle al encargado el papel de cuello de botella en las compras. Cualquier trabajador autorizado del local puede ver qué proveedor suministra cada producto, consultar sus días de reparto y lanzar pedidos sin supervisión constante. Así se sustituyen las libretas, las llamadas y los mensajes sueltos de WhatsApp por un registro digital, centralizado y auditable.
 
-> **Estado actual:** este repositorio contiene **solo el backend (API REST)** y los **diagramas** del proyecto. El frontend en React está en desarrollo en su propio repositorio: [Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND).
+> **Estado actual:** este repositorio contiene **el backend (API REST)** y los **diagramas** del proyecto. El frontend en React está en su propio repositorio: [Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND).
 
 ---
 
@@ -33,11 +33,11 @@ backend-api/
 ├── src/
 │   ├── config/           # Conexión a MongoDB (db.js) y Cloudinary (cloudinary.js)
 │   ├── controllers/      # Lógica de cada recurso (usuarios, productos, pedidos, bares, proveedores)
-│   ├── data/             # Datos de prueba que carga el seed
+│   ├── data/             # Datos que carga el seed (usuarios, bares, proveedores y productos)
 │   ├── middlewares/      # Autenticación JWT, control de roles y subida de archivos
 │   ├── models/           # Esquemas de Mongoose (Usuario, Bar, Proveedor, Producto, Pedido)
 │   ├── routes/           # Definición de los endpoints
-│   ├── seeds/            # Script que carga los datos de prueba (npm run seed)
+│   ├── seeds/            # Script que carga los datos (npm run seed)
 │   └── utils/            # Generación/verificación de tokens y utilidades de Cloudinary
 ├── index.js              # Punto de entrada del servidor
 ├── .env.example          # Plantilla de variables de entorno
@@ -50,7 +50,7 @@ backend-api/
 
 - **Node.js** 20 o superior y **npm**
 - Una base de datos **MongoDB**, ya sea local o en [MongoDB Atlas](https://www.mongodb.com/atlas)
-- Una cuenta de **[Cloudinary](https://cloudinary.com/)** para alojar las imágenes de los productos
+- Una cuenta de **[Cloudinary](https://cloudinary.com/)** para subir fotos de productos y bares desde la app. Las fotos de los productos del seed ya están alojadas en Cloudinary y se ven sin configurar nada
 - Opcional: **Insomnia** (o Postman) para probar los endpoints con la colección incluida
 
 ---
@@ -133,17 +133,35 @@ Conectado con éxito a la BBDD 🟢
 
 ### Datos de prueba (seed)
 
-Para tener datos con los que probar la API (por ejemplo con Insomnia o Postman):
+Los datos **no están en el repositorio, sino en la base de datos** a la que apunta `DB_URL`. Al clonar el proyecto hay dos opciones:
+
+- **Base de datos propia (vacía):** pon su cadena de conexión en `DB_URL` y carga los datos una vez con el seed.
+- **Base de datos que ya tiene los datos cargados** (por ejemplo, con el `.env` del autor): no hay que ejecutar nada, basta con arrancar el servidor. En MongoDB Atlas, la IP desde la que te conectas tiene que estar permitida en *Network Access*.
+
+Para cargar los datos:
 
 ```bash
 npm run seed
 ```
 
-> ⚠️ El seed **vacía** las colecciones de usuarios, bares, proveedores, productos y pedidos de la base de datos indicada en `DB_URL` antes de insertar los datos de prueba. No lo ejecutes contra una base de datos con datos reales.
+> ⚠️ El seed **vacía** las colecciones de usuarios, bares, proveedores, productos y pedidos de la base de datos indicada en `DB_URL` antes de insertar los datos. Todo lo que se haya creado desde la app (usuarios, locales, pedidos…) se pierde.
 
 > Si tienes una base de datos creada antes de que los bares admitieran varios encargados (campo `encargado` en lugar de `encargados`), puedes convertirla sin perder datos con `npm run migrar:encargados` ([`src/seeds/migrarEncargados.js`](src/seeds/migrarEncargados.js)).
 
-Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`](src/seeds/seed.js). Se crean 3 proveedores, 3 bares, 10 productos, 4 pedidos y estos usuarios, todos con la contraseña `Prueba1234`:
+Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`](src/seeds/seed.js). Se crean:
+
+- **4 proveedores reales** con los que trabajan los locales, con su catálogo sacado de sus facturas: precios sin IVA (con los descuentos habituales aplicados), medida por caja o por unidad, stock óptimo calculado con los pedidos de un mes y foto de cada producto alojada en Cloudinary. Los teléfonos de contacto son inventados.
+
+  | Proveedor | Contacto | Reparto | Productos |
+  |---|---|---|---|
+  | Cafés Tavira | Alex | martes y viernes | 8 (cafetería) |
+  | Exclusivas Ramírez | Manolo Tajuelo | lunes a sábado | 15 (refrescos, cervezas, vinos y alimentación) |
+  | Comercial Tabarca | Esther | lunes a viernes | 3 (aguas y tónica) |
+  | Distribuciones Guillén | Jony | lunes a viernes | 8 (vinos, licores y jamón) |
+
+- **3 bares:** *Kiosko Gómiz*, *Noray* y *Soho Parc*.
+- **Ningún pedido.** El historial empieza vacío; los pedidos se crean desde la app o con `POST /api/pedidos`.
+- **10 usuarios**, todos con la contraseña `Prueba1234`:
 
 | Correo | Rol | Detalle |
 |---|---|---|
@@ -153,8 +171,10 @@ Los datos están en [`src/data/`](src/data) y el script en [`src/seeds/seed.js`]
 | `empleado2@suppli.test` | Empleado | Trabaja en *Kiosko Gómiz* |
 | `empleado3@suppli.test` | Empleado | Trabaja en *Soho Parc* |
 | `empleado4@suppli.test` | Empleado | Sin bar asignado |
-| `proveedor1@suppli.test` | Proveedor | Empresa *Bebidas del Sur* |
-| `proveedor2@suppli.test` | Proveedor | Empresa *Cervezas La Cañada* |
+| `proveedor1@suppli.test` | Proveedor | Empresa *Cafés Tavira* |
+| `proveedor2@suppli.test` | Proveedor | Empresa *Exclusivas Ramírez* |
+| `proveedor3@suppli.test` | Proveedor | Empresa *Comercial Tabarca* |
+| `proveedor4@suppli.test` | Proveedor | Empresa *Distribuciones Guillén* |
 
 > **Nota:** todo el mundo se registra con rol `empleado` y sin bar (si el cuerpo trae `role`, `proveedor` o `bares`, se ignoran). El **primer encargado** hay que crearlo a mano: se registra como cualquier usuario y después se le cambia el `role` a `encargado` en la base de datos (con MongoDB Compass, Atlas o `mongosh`). A partir de ahí, un encargado puede crear bares, asignarles empleados y crear proveedores y convertir a otros usuarios en encargados o proveedores.
 
@@ -329,6 +349,8 @@ Los IDs que aparecen en las URL y en los cuerpos de las peticiones son los de la
 | Un producto | `GET /api/productos` | Cualquiera |
 | Un pedido | `GET /api/pedidos/historial` | Encargado / Proveedor |
 
+> El seed no crea pedidos. Antes de probar el historial, marcar un pedido como entregado o borrarlo, crea uno con **Pedidos → Crear pedido** (con `empleado1@suppli.test`).
+
 ### 5. Crear o editar productos con imagen
 
 La petición **Productos → Crear Producto** usa un cuerpo *Multipart Form* con un archivo en el campo `imagen`. La ruta del archivo de la colección es la del equipo donde se hicieron las pruebas, así que hay que seleccionar una imagen propia (formatos permitidos: jpg, jpeg, png, gif y webp). Si Insomnia no puede leer el archivo, hay que permitir su carpeta en *Preferences → General → Security*.
@@ -399,13 +421,17 @@ La carpeta [`Diagramas/`](Diagramas) contiene el diseño del proyecto:
 
 ## Próximos pasos
 
-- [ ] Frontend en **React** ([Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND)), en curso:
+- [x] Frontend en **React** ([Suppli-TFG-FRONTEND](https://github.com/JorgeSanchezGallego/Suppli-TFG-FRONTEND)):
   - [x] Landing, página "Quiénes somos", login, registro y sesión con JWT
-  - [ ] Catálogo visual, carrito de compra y panel de pedidos
-- [ ] Envío automático del pedido al proveedor por **WhatsApp** (generación de la URL de WhatsApp Web)
+  - [x] Catálogo visual, carrito de compra e historial de pedidos
+  - [x] Paneles del encargado y del proveedor, y gestión de proveedores
+  - [x] Política de cookies
+- [x] Envío del pedido al proveedor por **WhatsApp** (el frontend genera el enlace `wa.me` con el mensaje)
 - [x] Gestión de **bares** desde la API (crear, renombrar, borrar y asignar empleados)
 - [x] CRUD completo de **proveedores** desde la API
 - [x] Gestión del **estado** de los pedidos (`pendiente` → `entregado`)
+- [x] Seed con los **proveedores y productos reales** de los locales
+- [ ] Más adelante: gestión de propinas y solicitud de días libres para el personal
 
 ---
 
